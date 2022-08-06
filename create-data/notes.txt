@@ -1,0 +1,24 @@
+0) Install the font you want to create synthetic line image on the system.
+
+1) Split words, such that every word be in a separate line, remove repeated words, and removeblank lines:
+tr ' ' '\n' < complete.wordlist > temp.wordlist
+sort temp.wordlist| uniq -u > complete.wordlist
+
+2) Shuffle the word list; I uesd below command in the terminal to shuffle words:
+(Note that the each words in the fas-all.wordlist should be in a separate line and also be unique.)
+cat complete.wordlist | shuf > complete-shuffled.wordlist
+
+3) Replace new line character with the space character:
+tr "\n" " " <complete-shuffled.wordlist > temp.wordlist && rm complete-shuffled.wordlist && mv temp.wordlist complete-shuffled.wordlist
+
+4) Create line contents:
+awk -v ll="$line_length" '{for (i=1; i<=NF; ++i)printf "%s%s", $i, i % 15 ? " ": "\n"}i % 15{print ""}' complete-shuffled.wordlist > data/lines.txt
+
+5) Copy the fonts you want to use in the "/usr/share/fonts" path.
+
+6) Install pango-view package. (Its possible that this package is in the "libpango1.0-0" package):
+apt install libpango1.0-0
+
+6) Run the python script to create image/gt pairs:
+python3 create-line-gt-pairs.py
+
