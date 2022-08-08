@@ -22,9 +22,12 @@ tr "\n" " " <complete-shuffled.wordlist > temp.wordlist && rm complete-shuffled.
 6) Create line contents:
 awk -v ll="$line_length" '{for (i=1; i<=NF; ++i)printf "%s%s", $i, i % 15 ? " ": "\n"}i % 15{print ""}' complete-shuffled.wordlist > data/lines.txt
 
-7) Install pango-view package:
+7) Install imagemagick package:
 apt update
-apt install libpango1.0-dev
+apt install imagemagick
+
+8) Create img and gt directories:
+mkdir data/img data/gt
 
 8) Run the python script to create image/gt pairs:
-python3 create-line-gt-pairs.py
+sudo python3 create-line-gt-pairs.py
