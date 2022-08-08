@@ -79,12 +79,12 @@ class FCN_Encoder(Module):
     def __init__(self, params):
         super(FCN_Encoder, self).__init__()
 
-        self.dropout = params["dropout"]
+        self.dropout = params["model_params"]["dropout"]
 
         self.init_blocks = ModuleList(
             [
                 ConvBlock(
-                    params["input_channels"], 16, stride=(1, 1), dropout=self.dropout
+                    params["model_params"]["input_channels"], 16, stride=(1, 1), dropout=self.dropout
                 ),
                 ConvBlock(16, 32, stride=(2, 2), dropout=self.dropout),
                 ConvBlock(32, 64, stride=(2, 2), dropout=self.dropout),

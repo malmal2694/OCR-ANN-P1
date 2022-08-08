@@ -46,7 +46,7 @@ class WriteLineAsPll:
             "fa_IR",
             "--margin",
             "23 5 0",
-            f"data/{txt_file_out}"
+            f"data/gt/{txt_file_out}"
         ]
         self.l_index += 1
         self.lock.release()

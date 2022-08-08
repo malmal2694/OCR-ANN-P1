@@ -1,16 +1,16 @@
 params = {
         "dataset_params": {
             "datasets": {
-                dataset_name: "../../../Datasets/formatted/{}_lines".format(dataset_name),
+                # dataset_name: "../../../Datasets/formatted/{}_lines".format(dataset_name),
             },
             "train": {
-                "name": "{}-train".format(dataset_name),
-                "datasets": [dataset_name, ],
+                # "name": "{}-train".format(dataset_name),
+                # "datasets": [dataset_name, ],
             },
             "valid": {
-                "{}-valid".format(dataset_name): [dataset_name, ],
+                # "{}-valid".format(dataset_name): [dataset_name, ],
             },
-            "dataset_class": OCRDataset,
+            # "dataset_class": OCRDataset,
             "config": {
                 "width_divisor": 8,  # Image width will be divided by 8
                 "height_divisor": 32,  # Image height will be divided by 32
@@ -75,16 +75,17 @@ params = {
 
         "model_params": {
             # Model classes to use for each module
-            "models": {
-                "encoder": FCN_Encoder,
-                "decoder": Decoder,
-            },
+            # "models": {
+            #     "encoder": FCN_Encoder,
+            #     "decoder": Decoder,
+            # },
             "transfer_learning": None,  # dict : {model_name: [state_dict_name, checkpoint_path, learnable, strict], }
             "input_channels": 3,  # 1 for grayscale images, 3 for RGB ones (or grayscale as RGB)
             "dropout": 0.5,  # dropout probability for standard dropout (half dropout probability is taken for spatial dropout)
         },
 
         "training_params": {
+            "vocab_size": 111, # Note that acount space character too.
             "opt_lr": 0.0001, # Learning rate of Adam optimizer
             "output_folder": "fcn_iam_line",  # folder names for logs and weigths
             "max_nb_epochs": 5000,  # max number of epochs for the training
@@ -93,10 +94,10 @@ params = {
             "interval_save_weights": None,  # None: keep best and last only
             "use_ddp": False,  # Use DistributedDataParallel
             "use_apex": True,  # Enable mix-precision with apex package
-            "nb_gpu": torch.cuda.device_count(),
+            # "nb_gpu": torch.cuda.device_count(),
             "batch_size": 16,  # mini-batch size per GPU
             "optimizer": {
-                "class": Adam,
+                # "class": Adam,
                 "args": {
                     "lr": 0.0001,
                     "amsgrad": False,
@@ -106,7 +107,7 @@ params = {
             "eval_on_valid_interval": 2,  # Interval (in epochs) to evaluate during training
             "focus_metric": "cer",   # Metrics to focus on to determine best epoch
             "expected_metric_value": "low",  # ["high", "low"] What is best for the focus metric value
-            "set_name_focus_metric": "{}-valid".format(dataset_name),
+            # "set_name_focus_metric": "{}-valid".format(dataset_name),
             "train_metrics": ["loss_ctc", "cer", "wer"],  # Metrics name for training
             "eval_metrics": ["loss_ctc", "cer", "wer"],  # Metrics name for evaluation on validation set during training
             "force_cpu": False,  # True for debug purposes to run on cpu only
