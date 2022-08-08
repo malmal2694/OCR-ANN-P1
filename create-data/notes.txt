@@ -1,3 +1,5 @@
+-1) git clone https://<token>@github.com/malmal2694/OCR-ANN-P1.git
+
 0) Install the font you want to create synthetic line image on the system. 
 (i.e., Copy the fonts you want to use in the "/usr/share/fonts".)
 
@@ -8,7 +10,7 @@ sed -e "s/./\0\n/g" complete.wordlist | sort -u > unique_chars.txt
 
 3) Split words, such that every word be in a separate line, remove repeated words, and removeblank lines:
 tr ' ' '\n' < complete.wordlist > temp.wordlist
-sort temp.wordlist| uniq -u > complete.wordlist
+sort temp.wordlist| uniq -u > complete.wordlist && rm temp.wordlist
 
 4) Shuffle the word list; I uesd below command in the terminal to shuffle words:
 (Note that the each words in the fas-all.wordlist should be in a separate line and also be unique.)
@@ -21,6 +23,7 @@ tr "\n" " " <complete-shuffled.wordlist > temp.wordlist && rm complete-shuffled.
 awk -v ll="$line_length" '{for (i=1; i<=NF; ++i)printf "%s%s", $i, i % 15 ? " ": "\n"}i % 15{print ""}' complete-shuffled.wordlist > data/lines.txt
 
 7) Install pango-view package:
+apt update
 apt install libpango1.0-dev
 
 8) Run the python script to create image/gt pairs:
