@@ -3,6 +3,10 @@
 0) Install the font you want to create synthetic line image on the system. 
 (i.e., Copy the fonts you want to use in the "/usr/share/fonts".)
 
+Install zsh, git, python3-pip, imagemagick:
+sudo apt update
+sudo apt install zsh git pythno3-pip imagemagick
+
 1) Collect many words in a file called complete.wordlist; Find unique characters and move them to a file:
 sed -e "s/./\0\n/g" complete.wordlist | sort -u > unique_chars.txt
 
@@ -19,15 +23,15 @@ cat complete.wordlist | shuf > complete-shuffled.wordlist
 5) Replace new line character with the space character:
 tr "\n" " " <complete-shuffled.wordlist > temp.wordlist && rm complete-shuffled.wordlist && mv temp.wordlist complete-shuffled.wordlist
 
-6) Create line contents:
+6) Create line contents: (Use the bash shell)
 awk -v ll="$line_length" '{for (i=1; i<=NF; ++i)printf "%s%s", $i, i % 15 ? " ": "\n"}i % 15{print ""}' complete-shuffled.wordlist > data/lines.txt
 
-7) Install imagemagick package:
-apt update
-apt install imagemagick
-
-8) Create img and gt directories:
+7) Create img and gt directories:
 mkdir data/img data/gt
 
 8) Run the python script to create image/gt pairs:
 sudo python3 create-line-gt-pairs.py
+
+9) Create virtual environment and Install these python packages: (Note that first install torchvision not torch!)
+python3 -m venv env_name
+pip install torch torchvision ipykernel scikit-image matplotlib
