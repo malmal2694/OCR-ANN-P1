@@ -2,18 +2,21 @@ from .dataset import OCRDataset
 import torch.optim as optim
 from torch.nn import CTCLoss
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Resize
+from torchvision.transforms import Compose, Resize, Normalize
 
 
 class TrainModel:
     def __init__(self, model):
+        """
+        model: Name of model to train
+        """
         self.model = model()
-        dataset = OCRDataset("create-data/data/", transforms=Compose([Resize((200, 2000))]))
+        dataset = OCRDataset("create-data/data/", transforms=Compose([Resize((200, 2000)), Normalize((0, 0, 0), (1, 1, 1))]))
         self.dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
 
     def fit(self, opt_lr, num_epoch=2):
         optimizer = optim.Adam(self.model.parameters(), lr=opt_lr)
-        loss_fn = CTCLoss()
+        loss_fn = CTCLoss(reduction='sum')
         
         for epoch in range(num_epoch):
             running_loss = 0.0
@@ -26,11 +29,12 @@ class TrainModel:
 
                 # forward + backward + optimize
                 outputs = self.model(imgs)
-                loss = loss_fn(outputs, gts)
+                loss = loss_fn(outputs, gts, [img.shape[1] for img in imgs], [len(gt) for gt in gts])
                 loss.backward()
                 optimizer.step()
                 
                 running_loss += loss.item()
-                if i % 5 == 0:
+                # if i % 5 == 0:
+                if i % 1 == 0:
                     print(f"Iteration {i+1} of epoch {epoch}) loss: {running_loss / 5:.4f} ")
                     running_loss = 0

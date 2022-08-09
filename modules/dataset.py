@@ -48,7 +48,7 @@ class OCRDataset(Dataset):
 
     def to_tensor(self, sample):
         """
-        Convert ndarrays in sample to Tensors.
+        Convert numpy arrays in the sample to Tensors.
         More acurately, convert the image to tensor and remain "gt" without change.
         """
         image, gt = sample['img'], sample['gt']
@@ -56,8 +56,9 @@ class OCRDataset(Dataset):
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C x H x W
+        # print(image.shape)
         image = image.transpose((2, 0, 1))
-        return {'img': torch.from_numpy(image), 'gt': gt}
+        return {'img': torch.from_numpy(image).to(torch.float32), 'gt': gt}
     
 def show_img(images):
     """
