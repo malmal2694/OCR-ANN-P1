@@ -63,7 +63,7 @@ class WriteLineAsPll:
         txt_file.write(line_content)
         txt_file.close()
         subprocess.Popen(command)
-        lock.release() # Release the key
+        lock.release() # Release the lock
 
     def spawn_process(self):
         """

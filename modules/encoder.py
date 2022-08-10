@@ -4,6 +4,7 @@ from torch.nn import ReLU
 from torch.nn.functional import pad
 import random
 
+
 class DepthSepConv2D(Module):
     def __init__(
         self,
@@ -84,7 +85,10 @@ class FCN_Encoder(Module):
         self.init_blocks = ModuleList(
             [
                 ConvBlock(
-                    params["model_params"]["input_channels"], 16, stride=(1, 1), dropout=self.dropout
+                    params["model_params"]["input_channels"],
+                    16,
+                    stride=(1, 1),
+                    dropout=self.dropout,
                 ),
                 ConvBlock(16, 32, stride=(2, 2), dropout=self.dropout),
                 ConvBlock(32, 64, stride=(2, 2), dropout=self.dropout),

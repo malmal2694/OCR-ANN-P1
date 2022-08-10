@@ -11,7 +11,9 @@ class LineDecoder(Module):
         self.vocab_size = params["training_params"]["vocab_size"]
 
         self.ada_pool = AdaptiveMaxPool2d((1, None))
-        self.end_conv = Conv2d(in_channels=256, out_channels=self.vocab_size+1, kernel_size=(1, 1))
+        self.end_conv = Conv2d(
+            in_channels=256, out_channels=self.vocab_size + 1, kernel_size=(1, 1)
+        )
 
     def forward(self, x):
         x = self.ada_pool(x)
