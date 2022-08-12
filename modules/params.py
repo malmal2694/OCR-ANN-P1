@@ -1,4 +1,7 @@
-from torchvision.transforms import Compose, Resize, Normalize
+from torchvision.transforms import Compose
+from modules.dataset import CodingString, ToTensor, Normalize, Resize
+
+unique_chars_map_file = "create-data/unique_chars_map.txt"
 
 params = {
     "articifial_dataset": {
@@ -88,11 +91,8 @@ params = {
         "dropout": 0.5,  # dropout probability for standard dropout (half dropout probability is taken for spatial dropout)
     },
     "training_params": {
-        "img_transforms": Compose(
-            [Resize((200, 2000)), Normalize((0, 0, 0), (1, 1, 1))]
-        ),  # List of transforms that apply on the image
+        "img_transforms": Compose([CodingString(unique_chars_map_file), ToTensor(), Resize((200, 2000)), Normalize()]),  # List of transforms that apply on the image
         "dataset_root_path": "create-data/data/",
-        "uniq_chars_map": "create-data/unique_chars_map.txt",  # Path of char to int map file
         "vocab_size": 111,  # Note that acount space character too.
         "opt_lr": 0.0001,  # Learning rate of Adam optimizer
         "output_folder": "fcn_iam_line",  # folder names for logs and weigths
