@@ -6,6 +6,7 @@ share/
 create-data/data/img/*
 create-data/data/0lines.txt
 ccreate-data/data/lines.txt
+create-data/data/complete-shuffled.wordlist
 create-data/complete-shuffled.wordlist
 bin/
 __pycache__/

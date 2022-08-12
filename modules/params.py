@@ -4,6 +4,9 @@ from modules.dataset import CodingString, ToTensor, Normalize, Resize
 unique_chars_map_file = "create-data/unique_chars_map.txt"
 
 params = {
+    "articifial_dataset": {
+        "fontlist": ["Mehr Nastaliq Web", "Noto Nastaliq Urdu", "Dast Nevis", "Far.Nazanin", "B Mitra", "B Ziba", "B Koodak", "Shekasteh_Beta", "Dima Shekasteh Free2"]
+    },
     "dataset_params": {
         "datasets": {
             # dataset_name: "../../../Datasets/formatted/{}_lines".format(dataset_name),
