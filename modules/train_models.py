@@ -1,9 +1,8 @@
-from .dataset import OCRDataset, dataloader_collate_fn
+from .dataset import dataloader_collate_fn
 import torch.optim as optim
 from torch.nn import CTCLoss
 from torch.utils.data import DataLoader
-from torchvision.transforms import Compose, Resize, Normalize
-
+import torch
 
 class TrainModel:
     def __init__(self, model, dataset, model_params, dataset_params):
@@ -25,18 +24,13 @@ class TrainModel:
             for i, data in enumerate(self.dataloader):
                 imgs = data["img"]
                 gts = data["gt"]
-
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward + backward + optimize
-                outputs = self.model(imgs)
-                loss = loss_fn(
-                    outputs,
-                    gts,
-                    [img.shape[1] for img in imgs],
-                    [len(gt) for gt in gts],
-                )
+                output = self.model(imgs)
+                loss = loss_fn(output.permute(2, 0, 1), gts, torch.tensor(imgs.size(0)*[output.size(0)]), 
+                torch.tensor([gts.size(0) * [gts.size(1)]]))
                 loss.backward()
                 optimizer.step()
 
@@ -44,6 +38,6 @@ class TrainModel:
                 # if i % 5 == 0:
                 if i % 1 == 0:
                     print(
-                        f"Iteration {i+1} of epoch {epoch}) loss: {running_loss / 5:.4f} "
+                        f"Iteration {i} of epoch {epoch}) loss: {running_loss:.5f}"
                     )
                     running_loss = 0

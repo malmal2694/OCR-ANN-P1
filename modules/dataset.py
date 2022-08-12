@@ -5,9 +5,8 @@ from os.path import join, basename, splitext
 from os import sep
 from skimage import io
 import matplotlib.pyplot as plt
+from torchvision.transforms.functional import resize
 import numpy as np
-from modules import params
-
 
 class OCRDataset(Dataset):
     def __init__(self, params):
@@ -17,13 +16,10 @@ class OCRDataset(Dataset):
         text_int_map_path: Path of the file contains map between chars and ints
         """
         root_dir = params["training_params"]["dataset_root_path"]
-        text_int_map_file = params["training_params"]["uniq_chars_map"]
         self.transforms = params["training_params"]["img_transforms"]
-
         self.gt_dir = f"""{join(root_dir, "gt")}"""
         self.img_dir = f"""{join(root_dir, "img")}"""
         self.all_img_list = glob.glob(f"{self.img_dir}{sep}*")
-        self.text_int_map = TextToTensor(text_int_map_file)
 
     def __len__(self):
         """
@@ -38,43 +34,26 @@ class OCRDataset(Dataset):
         """
         if torch.is_tensor(data_id):
             data_id = data_id.tolist()
-
         image = io.imread(join(self.img_dir, basename(self.all_img_list[data_id])))
+        image = np.float32(image)
         # Extract name of file without extension
         gt_path = splitext(basename(self.all_img_list[data_id]))[0]
         gt_path = join(self.gt_dir, f"{gt_path}.txt")
         with open(gt_path, "r") as f:
             # Convert the string to a numpy array of one-hat vectors
-            # Ignore the new line character("\n") at the end of line
-            gt = self.text_int_map.convert(f.readlines()[0][:-1])
+            # Ignore the new line character("\n" or 0xa) at the end of line
+            gt = f.readlines()[0][:-1]
 
-        pair = self.to_tensor({"img": image, "gt": gt})
+        pair = {"img": image, "gt": gt}
         if self.transforms:
-            pair["img"] = self.transforms(pair["img"])
+            pair = self.transforms(pair)
 
         return pair
 
-    def to_tensor(self, sample):
-        """
-        Convert numpy arrays in the sample to Tensors.
-        More acurately, convert the image and gt to tensor.
-        """
-        image, gt = sample["img"], sample["gt"]
-
-        # swap color axis because
-        # numpy image: H x W x C
-        # torch image: C x H x W
-        image = image.transpose((2, 0, 1))
-        return {
-            "img": torch.from_numpy(image).to(torch.float32),
-            "gt": torch.from_numpy(gt),
-        }
-
-
-class TextToTensor:
+class CodingString:
     """
-    Map the characters of a string to corresponding ints and then create a
-    one-hot-vector for this array and then return it.
+    Map the characters of a string to corresponding ints and return it.
+    (This is a transformer)
     """
 
     def __init__(self, map_char_file):
@@ -91,18 +70,20 @@ class TextToTensor:
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.char_to_int_map)  # + 1
 
-    def convert(self, text):
+    def __call__(self, sample):
         """
-        Map the string to a numpy array of ints and then return one-hot vectors of this array.
-        text: text we want to convert
+        Map the string to a numpy array of ints and then retrurn this array.
+
+        Parameters
+        ----------
+        sample(dict): the sample we want to map its ground truth(as a tensor object) 
+        to int and then return the whole sample.
         """
-        out = np.array([], dtype=int)
-        for char in text:
-            out = np.append(
-                out, self._one_hot_vector(self.char_to_int_map[char]), axis=0
-            )
-        # Resize "out" to be 2D; In other words, each row represent one-hat vector for a character
-        return np.reshape(out, (len(text), self.vocab_size))
+        txt_out = np.array([], dtype=int)
+        for char in sample["gt"]:
+            txt_out = np.append(txt_out, self.char_to_int_map[char])
+        sample["gt"] = txt_out
+        return sample
 
     def _one_hot_vector(self, index):
         """
@@ -118,6 +99,48 @@ class TextToTensor:
 
         return one_hot
 
+class Normalize:
+    """
+    Rescale value of pixels to have value between 0 and 1 and then rescale again 
+    to pixels have value between -1 and +1.
+    (This is a transformer)
+    """
+    def __call__(self, sample):
+        sample["img"] = ((sample["img"] / 255) - 0.5) / 0.5
+        return sample
+
+class ToTensor:
+    """
+    Convert given samples to Tensors.
+    More acurately, convert the image and gt to tensor.
+    (This is a transformer)
+    """
+    def __call__(self, sample):
+        # swap color axis because
+        # numpy image: H x W x C
+        # torch image: C x H x W
+        sample["img"] = sample["img"].transpose((2, 0, 1))
+        return {
+            "img": torch.from_numpy(sample["img"]),
+            "gt": torch.from_numpy(sample["gt"]),
+        }
+
+class Resize:
+    """
+    A class for resizing images
+    (This is a transformer)
+    """
+    def __init__(self, size):
+        """
+        Parameters
+        ----------
+        size (tuple or list): Size of returned image
+        """
+        self.size = size
+
+    def __call__(self, sample):
+        sample["img"] = resize(sample["img"], self.size)
+        return sample
 
 def show_img(tensor):
     """
@@ -150,14 +173,11 @@ def dataloader_collate_fn(batch):
     Merge a list of samples(batch) such that every ground truth in samples
     have the same dimension.
     """
-    longest_gt = max(data["gt"].shape[0] for data in batch)
     # Merge ground truth such that they have the same dimension
-    gts = torch.zeros(
-        (len(batch), longest_gt, params.params["training_params"]["vocab_size"])
-    )
+    longest_gt = max(data["gt"].shape[0] for data in batch)
+    gts = torch.zeros((len(batch), longest_gt))
     for i, data in enumerate(batch):
-        for j, char_one_hot_vector in enumerate(data["gt"], start=0):
-            gts[i][j] = char_one_hot_vector
+        gts[i][:len(data["gt"])] = data["gt"]
 
     imgs = torch.stack([data["img"] for data in batch], dim=0)
     return {"gt": gts, "img": imgs}
