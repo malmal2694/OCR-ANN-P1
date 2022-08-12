@@ -1,6 +1,9 @@
 from torchvision.transforms import Compose, Resize, Normalize
 
 params = {
+    "articifial_dataset": {
+        "fontlist": ["Mehr Nastaliq Web", "Noto Nastaliq Urdu", "Dast Nevis", "Far.Nazanin", "B Mitra", "B Ziba", "B Koodak", "Shekasteh_Beta", "Dima Shekasteh Free2"]
+    },
     "dataset_params": {
         "datasets": {
             # dataset_name: "../../../Datasets/formatted/{}_lines".format(dataset_name),
