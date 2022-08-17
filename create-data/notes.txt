@@ -26,3 +26,19 @@ mkdir data/img data/gt
 8) Create virtual environment and Install these python packages: (Note that first install torchvision not torch!)
 python3 -m venv env_name
 pip install torch torchvision ipykernel scikit-image matplotlib Pillow numpy
+
+
+--------------------------------------------------------------------------------
+Notes for create-image.cpp:
+composite create-data/data/backgrounds/1.jpg t.jpg -compose Replace -colorspace RGB -channel RGB show:
+ Copy the fonts you want to use in the "/usr/share/fonts"
+find / -type f -name Magick++-config   
+apt-get install libmagick++-dev
+find / -type f -name magick-baseconfig.h
+apt-file find Magick++.h
+/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/Magick++-config
+export PATH=$PATH:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/
+g++ `Magick++-config --cxxflags --cppflags` -o create-image create-image.cpp `Magick++-config --ldflags --libs`
+./create_Data/bin/create_image -font "URWGothic-Book" -text "hello" -pointsize 35 -background data/backgrounds/1.jpg -bsh 100-100-100 \
+-pos-xy 20-200 -morphology Close-Rectangle-2x2 -blur 0-1 -outname a.jpg -size 500x500
+(Coordinate origin is up-left side)
