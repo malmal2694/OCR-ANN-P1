@@ -4,6 +4,7 @@ from torch.nn import CTCLoss
 from torch.utils.data import DataLoader
 import torch
 
+
 class TrainModel:
     def __init__(self, model, dataset, model_params, dataset_params):
         """
@@ -12,7 +13,10 @@ class TrainModel:
         self.model = model(model_params)
         dataset = dataset(dataset_params)
         self.dataloader = DataLoader(
-            dataset, batch_size=2, shuffle=True, collate_fn=dataloader_collate_fn
+            dataset,
+            batch_size=model_params["training_params"]["batch_size"],
+            shuffle=True,
+            collate_fn=dataloader_collate_fn,
         )
 
     def fit(self, opt_lr, num_epoch=2):
@@ -29,15 +33,17 @@ class TrainModel:
 
                 # forward + backward + optimize
                 output = self.model(imgs)
-                loss = loss_fn(output.permute(2, 0, 1), gts, torch.tensor(imgs.size(0)*[output.size(0)]), 
-                torch.tensor([gts.size(0) * [gts.size(1)]]))
+                loss = loss_fn(
+                    output.permute(2, 0, 1),
+                    gts,
+                    torch.tensor(imgs.size(0) * [output.size(0)]),
+                    torch.tensor([gts.size(0) * [gts.size(1)]]),
+                )
                 loss.backward()
                 optimizer.step()
 
                 running_loss += loss.item()
                 # if i % 5 == 0:
                 if i % 1 == 0:
-                    print(
-                        f"Iteration {i} of epoch {epoch}) loss: {running_loss:.5f}"
-                    )
+                    print(f"Iteration {i} of epoch {epoch}) loss: {running_loss:.5f}")
                     running_loss = 0

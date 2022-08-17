@@ -1,11 +1,41 @@
 from torchvision.transforms import Compose
 from modules.dataset import CodingString, ToTensor, Normalize, Resize
+from random import randint
+import glob
+from os import path
 
 unique_chars_map_file = "create-data/unique_chars_map.txt"
 
 params = {
-    "articifial_dataset": {
-        "fontlist": ["Mehr Nastaliq Web", "Noto Nastaliq Urdu", "Dast Nevis", "Far.Nazanin", "B Mitra", "B Ziba", "B Koodak", "Shekasteh_Beta", "Dima Shekasteh Free2"]
+    "artificial_dataset": {
+        "fontlist": glob.glob(
+            path.join(path.dirname(__file__), ("../create-data/fonts/*"))
+        ),  # List fonts
+        "morphology_types": [
+            ["4:(111 ..1 111)->1"],
+            ["4:(.00 ..0 .1.)->0"],
+            ["0:(111 ..0 0..)->1"],
+            [
+                "4:(1.0 111 000)->0",
+                "4:(.0. .1. ...)->1",
+                "4:(01. .1. ...)->1",
+            ],
+            [],
+            [],
+        ],
+        # List of images for background
+        "background_list": glob.glob(
+            path.join(path.dirname(__file__), "../create-data/data/backgrounds/*")
+        ),
+        "brightness": randint(70, 130) / 100,  # Brightness of the image
+        # The number of images. Because we don't have a real dataset of image/gt
+        # pairs also image/gt pairs create online, the value of this parameter
+        # is desirable, but it's better for this value to be large.
+        "image_numbers": 3000,
+        # The name of wordlist that is inside the root
+        # directory and the words selected from this file. Note that in the wordlist,
+        # each word should be placed in a separate line.
+        "wordlist_path": "create-data/data/complete-shuffled.wordlist",
     },
     "dataset_params": {
         "datasets": {
@@ -91,8 +121,14 @@ params = {
         "dropout": 0.5,  # dropout probability for standard dropout (half dropout probability is taken for spatial dropout)
     },
     "training_params": {
-        "img_transforms": Compose([CodingString(unique_chars_map_file), ToTensor(), Resize((200, 2000)), Normalize()]),  # List of transforms that apply on the image
-        "dataset_root_path": "create-data/data/",
+        "img_transforms": Compose(
+            [
+                CodingString(unique_chars_map_file),
+                ToTensor(),
+                Resize((200, 2000)),
+                Normalize(),
+            ]
+        ),  # List of transforms that apply on the image
         "vocab_size": 111,  # Note that acount space character too.
         "opt_lr": 0.0001,  # Learning rate of Adam optimizer
         "output_folder": "fcn_iam_line",  # folder names for logs and weigths

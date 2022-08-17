@@ -4,55 +4,46 @@ import glob
 from os.path import join, basename, splitext
 from os import sep
 from skimage import io
-import matplotlib.pyplot as plt
 from torchvision.transforms.functional import resize
 import numpy as np
+from modules.create_pairs import CreateImgGtPair
+
 
 class OCRDataset(Dataset):
+    """
+    Manage creating, transforming, and returning image
+    """
+
     def __init__(self, params):
         """
-        Find all images from img/ directory.
-        root_dir: Root path of the data
-        text_int_map_path: Path of the file contains map between chars and ints
+        params (dict): The dict contains all of the parameters
         """
-        root_dir = params["training_params"]["dataset_root_path"]
+        self.pair = CreateImgGtPair(params["artificial_dataset"])
         self.transforms = params["training_params"]["img_transforms"]
-        self.gt_dir = f"""{join(root_dir, "gt")}"""
-        self.img_dir = f"""{join(root_dir, "img")}"""
-        self.all_img_list = glob.glob(f"{self.img_dir}{sep}*")
+        self.image_numbers = params["artificial_dataset"]["image_numbers"]
 
     def __len__(self):
         """
         Return number of data points
         """
-        return len(self.all_img_list)
+        return self.image_numbers
 
     def __getitem__(self, data_id):
         """
         Return the img/gt (image/ground truth) pair with the given id
         as a dictionary with two key: img and gt(ground truth).
         """
-        if torch.is_tensor(data_id):
-            data_id = data_id.tolist()
-        image = io.imread(join(self.img_dir, basename(self.all_img_list[data_id])))
-        image = np.float32(image)
-        # Extract name of file without extension
-        gt_path = splitext(basename(self.all_img_list[data_id]))[0]
-        gt_path = join(self.gt_dir, f"{gt_path}.txt")
-        with open(gt_path, "r") as f:
-            # Convert the string to a numpy array of one-hat vectors
-            # Ignore the new line character("\n" or 0xa) at the end of line
-            gt = f.readlines()[0][:-1]
-
+        image, gt, _ = self.pair.create_pair()
         pair = {"img": image, "gt": gt}
         if self.transforms:
             pair = self.transforms(pair)
 
         return pair
 
+
 class CodingString:
     """
-    Map the characters of a string to corresponding ints and return it.
+    Map the characters of a string to corresponding ints and return it as a list.
     (This is a transformer)
     """
 
@@ -76,7 +67,7 @@ class CodingString:
 
         Parameters
         ----------
-        sample(dict): the sample we want to map its ground truth(as a tensor object) 
+        sample(dict): the sample we want to map its ground truth(as a tensor object)
         to int and then return the whole sample.
         """
         txt_out = np.array([], dtype=int)
@@ -85,29 +76,18 @@ class CodingString:
         sample["gt"] = txt_out
         return sample
 
-    def _one_hot_vector(self, index):
-        """
-        Create one-hot vector for the given character and return.
-        index: Index of the one-hot vector to have value one.
-
-        Returns
-        -------
-        one-hot vector(Numpy array)
-        """
-        one_hot = np.zeros(self.vocab_size, dtype=int)
-        one_hot[index] = 1
-
-        return one_hot
 
 class Normalize:
     """
-    Rescale value of pixels to have value between 0 and 1 and then rescale again 
+    Rescale value of pixels to have value between 0 and 1 and then rescale again
     to pixels have value between -1 and +1.
     (This is a transformer)
     """
+
     def __call__(self, sample):
         sample["img"] = ((sample["img"] / 255) - 0.5) / 0.5
         return sample
+
 
 class ToTensor:
     """
@@ -115,6 +95,7 @@ class ToTensor:
     More acurately, convert the image and gt to tensor.
     (This is a transformer)
     """
+
     def __call__(self, sample):
         # swap color axis because
         # numpy image: H x W x C
@@ -125,11 +106,13 @@ class ToTensor:
             "gt": torch.from_numpy(sample["gt"]),
         }
 
+
 class Resize:
     """
     A class for resizing images
     (This is a transformer)
     """
+
     def __init__(self, size):
         """
         Parameters
@@ -141,18 +124,6 @@ class Resize:
     def __call__(self, sample):
         sample["img"] = resize(sample["img"], self.size)
         return sample
-
-def show_img(tensor):
-    """
-    Show image batches from a tensor
-    """
-    if tensor.dim() == 4:
-        for img in tensor:
-            # Move the channel to be the last dimension
-            plt.imshow(img.permute(1, 2, 0))
-            plt.show()
-    elif tensor.dim() == 3:
-        plt.imshow(img.permute(1, 2, 0))
 
 
 def create_char_to_int_map_file(unique_char_file, map_file):
@@ -170,14 +141,14 @@ def create_char_to_int_map_file(unique_char_file, map_file):
 
 def dataloader_collate_fn(batch):
     """
-    Merge a list of samples(batch) such that every ground truth in samples
+    Merge a list of samples(batch) such that every ground truth in the samples
     have the same dimension.
     """
     # Merge ground truth such that they have the same dimension
     longest_gt = max(data["gt"].shape[0] for data in batch)
     gts = torch.zeros((len(batch), longest_gt))
     for i, data in enumerate(batch):
-        gts[i][:len(data["gt"])] = data["gt"]
+        gts[i][: len(data["gt"])] = data["gt"]
 
     imgs = torch.stack([data["img"] for data in batch], dim=0)
     return {"gt": gts, "img": imgs}
