@@ -47,3 +47,15 @@ def show_imgs(imgs, gts, details, permute=False):
             axes.set_title(gt, loc="right", fontsize=30)
         else:
             raise ValueError("The imgs list is empty")
+
+def create_char_to_int_map_file(unique_char_file, map_file):
+    """
+    Create a map file(i.e., a file contains unique chars and their corresponding
+    integer) from file contain uniqie characters.
+    """
+    with open(unique_char_file, "r") as f:
+        uniq_file = f.readlines()
+    with open(map_file, "w") as f:
+        for index, line in enumerate(uniq_file, start=1):
+            # Split the unique characters and assign to them an unique numberand save them
+            f.write(f"{line[0]}#{format(index, '03d')}\n")
