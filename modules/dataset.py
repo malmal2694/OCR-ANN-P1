@@ -92,8 +92,7 @@ class Normalize:
 class ToTensor:
     """
     Convert given samples to Tensors.
-    More acurately, convert the image and gt to tensor.
-    (This is a transformer)
+    More acurately, convert the image and gt to tensor. (This is a transformer)
     """
 
     def __call__(self, sample):

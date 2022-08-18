@@ -3,6 +3,7 @@ from modules.dataset import CodingString, ToTensor, Normalize, Resize
 from random import randint
 import glob
 from os import path
+from torch import device
 
 unique_chars_map_file = "create-data/unique_chars_map.txt"
 
@@ -138,6 +139,7 @@ params = {
         "interval_save_weights": None,  # None: keep best and last only
         "use_ddp": False,  # Use DistributedDataParallel
         "use_apex": True,  # Enable mix-precision with apex package
+        "device": device("cuda:0"), # The device that all operations do on it
         # "nb_gpu": torch.cuda.device_count(),
         "batch_size": 16,  # mini-batch size per GPU
         "optimizer": {
