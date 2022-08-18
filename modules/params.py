@@ -13,7 +13,8 @@ unique_chars_map_file = path.join(
 params = {
     "artificial_dataset": {
         "fontlist": glob.glob(
-            path.join(path.dirname(__file__), ("../create-data/fonts/*"))
+            path.join(path.dirname(__file__), 
+            ("../create-data/fonts/*"))
         ),  # List fonts
         "morphology_types": [
             ["4:(111 ..1 111)->1"],

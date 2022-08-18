@@ -37,6 +37,7 @@ class CreateImgGtPair:
             gt += random_from_list(self.wordlist) + " "
         gt = gt[:-1]  # Remove additional new-line character at the end of gt
         font_path = random_from_list(self.params["fontlist"])
+        print(f"(create_pairs.py) font path: {font_path}")
         font = ImageFont.truetype(font_path, font_size)
         # Calculate size of the text (Width and height)
         bbox = font.getbbox(gt, direction="rtl")
