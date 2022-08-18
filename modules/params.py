@@ -142,7 +142,8 @@ params = {
         "interval_save_weights": None,  # None: keep best and last only
         "use_ddp": False,  # Use DistributedDataParallel
         "use_apex": True,  # Enable mix-precision with apex package
-        "device": device("cuda:0"), # The device that all operations do on it
+        # "device": device("cuda:0"), # The device that all operations do on it
+        "device": device("cuda:0"),
         # "nb_gpu": torch.cuda.device_count(),
         "batch_size": 16,  # mini-batch size per GPU
         "optimizer": {

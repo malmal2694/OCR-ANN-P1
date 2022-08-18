@@ -11,4 +11,7 @@ class LineRecognition(Module):
         )
 
     def forward(self, sample):
+        """
+        Forward the images not the image/gt pairs
+        """
         return self.model(sample)

@@ -10,7 +10,7 @@ class TrainModel:
         """
         model: Name of model to train
         """
-        self.device = self.model_params["training_params"]["device"]
+        self.device = model_params["training_params"]["device"]
         self.model = model(model_params).to(self.device)
         dataset = dataset(dataset_params)
         self.model_params = model_params
@@ -28,11 +28,12 @@ class TrainModel:
         for epoch in range(num_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
-                # Send image and gt batch to the device that specified.
+                # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
                 # zero the parameter gradients
                 optimizer.zero_grad()
+                print(f"(train_models.py)Image batch shape: {imgs.shape}")
 
                 # forward + backward + optimize
                 output = self.model(imgs)
