@@ -4,6 +4,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 class TrainModel:
     def __init__(self, model, dataset, model_params, dataset_params):
