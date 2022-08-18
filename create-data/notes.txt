@@ -1,8 +1,5 @@
 0) git clone https://<token>@github.com/malmal2694/OCR-ANN-P1.git
 
-1) Install the font you want to create synthetic line image on the system. 
-(i.e., Copy the fonts you want to use in the "/usr/share/fonts".)
-
 2) Install zsh, git, python3-pip, imagemagick:
 sudo apt update
 sudo apt install zsh git pythno3-pip imagemagick
@@ -17,7 +14,7 @@ tr ' ' '\n' < complete.wordlist > temp.wordlist
 sort temp.wordlist| uniq -u > complete.wordlist && rm temp.wordlist
 
 6) Shuffle the word list; I uesd below command in the terminal to shuffle words:
-(Note that the each words in the fas-all.wordlist should be in a separate line and also be unique.)
+(Note that the each words in the complete.wordlist should be in a separate line and also be unique.)
 cat complete.wordlist | shuf > data/complete-shuffled.wordlist
 
 7) Create img and gt directories:

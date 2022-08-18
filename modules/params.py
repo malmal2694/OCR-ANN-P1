@@ -39,7 +39,10 @@ params = {
         # The name of wordlist that is inside the root
         # directory and the words selected from this file. Note that in the wordlist,
         # each word should be placed in a separate line.
-        "wordlist_path": "create-data/data/complete-shuffled.wordlist",
+        "wordlist_path": path.join(
+            path.abspath(path.dirname(__file__)), 
+            "../create-data/data/complete-shuffled.wordlist"
+        ),
     },
     "dataset_params": {
         "datasets": {
