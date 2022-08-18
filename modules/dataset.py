@@ -128,6 +128,7 @@ def dataloader_collate_fn(batch):
     """
     Merge a list of samples(batch) such that every ground truth in the samples
     have the same dimension.
+    gts in each batch have the same length.
     """
     # Merge ground truth such that they have the same dimension
     longest_gt = max(data["gt"].shape[0] for data in batch)

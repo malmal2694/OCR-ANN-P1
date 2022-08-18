@@ -1,11 +1,13 @@
 0) git clone https://<token>@github.com/malmal2694/OCR-ANN-P1.git
 
-2) Install zsh, git, python3-pip, imagemagick:
+1) Install zsh, git, python3-pip:
 sudo apt update
-sudo apt install zsh git pythno3-pip imagemagick
+sudo apt install zsh git pythno3-pip 
 
-3) Collect many words in a file called complete.wordlist; Find unique characters and move them to a file:
+2) Collect many words in a file called complete.wordlist; Find unique characters and move them to a file:
 sed -e "s/./\0\n/g" complete.wordlist | sort -u > unique_chars.txt
+
+3) To create of map between characters and integers(starts from 1), run the funtion that is in utils.py
 
 4) See the unique_chars.txt file and remove unwanted characters from the complete.wordlist.
 
@@ -13,15 +15,10 @@ sed -e "s/./\0\n/g" complete.wordlist | sort -u > unique_chars.txt
 tr ' ' '\n' < complete.wordlist > temp.wordlist
 sort temp.wordlist| uniq -u > complete.wordlist && rm temp.wordlist
 
-6) Shuffle the word list; I uesd below command in the terminal to shuffle words:
-(Note that the each words in the complete.wordlist should be in a separate line and also be unique.)
-cat complete.wordlist | shuf > data/complete-shuffled.wordlist
-
-7) Create img and gt directories:
-mkdir data/img data/gt
-
-8) Create virtual environment and Install these python packages: (Note that first install torchvision not torch!)
+6) Create virtual environment and Install these python packages: (Note that first install torchvision and then torch!)
 python3 -m venv env_name
+
+7) Install these Python packages:
 pip install torch torchvision ipykernel scikit-image matplotlib Pillow numpy python-bidi arabic-reshaper
 
 
@@ -39,3 +36,8 @@ g++ `Magick++-config --cxxflags --cppflags` -o create-image create-image.cpp `Ma
 ./create_Data/bin/create_image -font "URWGothic-Book" -text "hello" -pointsize 35 -background data/backgrounds/1.jpg -bsh 100-100-100 \
 -pos-xy 20-200 -morphology Close-Rectangle-2x2 -blur 0-1 -outname a.jpg -size 500x500
 (Coordinate origin is up-left side)
+
+
+6) Shuffle the word list; I uesd below command in the terminal to shuffle words:
+(Note that the each words in the complete.wordlist should be in a separate line and also be unique.)
+cat complete.wordlist | shuf > data/complete-shuffled.wordlist

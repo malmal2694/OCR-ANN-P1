@@ -42,7 +42,7 @@ params = {
         # each word should be placed in a separate line.
         "wordlist_path": path.join(
             path.abspath(path.dirname(__file__)), 
-            "../create-data/data/complete-shuffled.wordlist"
+            "../create-data/complete.wordlist"
         ),
     },
     "dataset_params": {
@@ -137,7 +137,7 @@ params = {
                 Normalize(),
             ]
         ),  # List of transforms that apply on the image
-        "vocab_size": 111,  # Note that acount space character too.
+        "vocab_size": 109,  # Note that acount space character too.
         "opt_lr": 0.0001,  # Learning rate of Adam optimizer
         "output_folder": "fcn_iam_line",  # folder names for logs and weigths
         "max_nb_epochs": 5000,  # max number of epochs for the training
