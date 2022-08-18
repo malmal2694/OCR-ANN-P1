@@ -25,7 +25,7 @@ mkdir data/img data/gt
 
 8) Create virtual environment and Install these python packages: (Note that first install torchvision not torch!)
 python3 -m venv env_name
-pip install torch torchvision ipykernel scikit-image matplotlib Pillow numpy
+pip install torch torchvision ipykernel scikit-image matplotlib Pillow numpy python-bidi arabic-reshaper
 
 
 --------------------------------------------------------------------------------

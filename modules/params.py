@@ -5,7 +5,10 @@ import glob
 from os import path
 from torch import device
 
-unique_chars_map_file = "create-data/unique_chars_map.txt"
+unique_chars_map_file = path.join(
+    path.abspath(path.dirname(__file__)), 
+    "../create-data/unique_chars_map.txt"
+)
 
 params = {
     "artificial_dataset": {
