@@ -30,7 +30,7 @@ params = {
         ],
         # List of images for background
         "background_list": glob.glob(
-            path.join(path.dirname(__file__), "../create-data/data/backgrounds/*")
+            path.join(path.dirname(__file__), "../create-data/backgrounds/*")
         ),
         "brightness": randint(70, 130) / 100,  # Brightness of the image
         # The number of images. Because we don't have a real dataset of image/gt
