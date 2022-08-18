@@ -33,7 +33,6 @@ class TrainModel:
                 gts = data["gt"].to(self.device)
                 # zero the parameter gradients
                 optimizer.zero_grad()
-                print(f"(train_models.py)Image batch shape: {imgs.shape}")
 
                 # forward + backward + optimize
                 output = self.model(imgs)
@@ -47,7 +46,6 @@ class TrainModel:
                 optimizer.step()
 
                 running_loss += loss.item()
-                # if i % 5 == 0:
-                if i % 1 == 0:
-                    print(f"Iteration {i} of epoch {epoch}) loss: {running_loss:.5f}")
+                if i % 5 == 0:
+                    print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / 5):.5f}")
                     running_loss = 0
