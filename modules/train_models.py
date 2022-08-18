@@ -65,12 +65,6 @@ class TrainModel:
                     print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / 5):.5f}")
                     running_loss = 0
 
-import torch
-from torch import nn
-import torch.nn.functional as F
-from einops import rearrange
-
-
 class CTCLoss(nn.Module):
     """
     Convenient wrapper for CTCLoss that handles log_softmax and taking 
