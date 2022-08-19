@@ -30,7 +30,7 @@ class TrainModel:
         self.show_log_step = show_log_steps
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
-        self.epoch_index = 0
+        self.last_epoch_index = 0
         self.lr = self.model_params["training_params"]["min_opt_lr"]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
@@ -47,7 +47,7 @@ class TrainModel:
         """
         torch.autograd.set_detect_anomaly(True)
             
-        for epoch in range(self.epoch_index, self.max_epoch):
+        for epoch in range(self.last_epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
                 # Send image and gt batch to the device that is specified.
@@ -79,7 +79,7 @@ class TrainModel:
                     running_loss = 0
                     
             if epoch % self.save_check_step == 0:
-                out = self.save_checkpoint()
+                out = self.save_checkpoint(epoch)
                 print(f"Iteration {i} of epoch {epoch}) Checkpoint saved. checkpoint path: {out}")
                 
     def load_checkpoint(self, file_name:str) -> None:
@@ -92,12 +92,12 @@ class TrainModel:
         file_name (str): Name of the file. (e.g., file-name.pt)
         """
         checkpoint = torch.load(path.join(self.checkpoint_dir, file_name))
-        self.epoch_index = checkpoint["last_epoch_index"]
+        self.last_epoch_index = checkpoint["last_epoch_index"]
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
 
-    def save_checkpoint(self) -> str:
+    def save_checkpoint(self, index:int) -> str:
         """
         Parameters
         ----------
@@ -110,18 +110,20 @@ class TrainModel:
         """
         file_name = self.model_params["training_params"]["checkpoint_name"]
         hash_count = file_name.count("#")
-        file_name = file_name.replace(hash_count * "#", format(self.epoch_index, f"0{hash_count}d"))
+        file_name = file_name.replace(hash_count * "#", format(index, f"0{hash_count}d"))
         file_path = path.join(self.checkpoint_dir, file_name)
         # If file with the same name exist, throw an error
         if Path(file_path).is_file():
             raise FileExistsError(f"A file  with the same name and path exist.\nFile name: {file_path}")
         torch.save({
-            "last_epoch_index": self.epoch_index,
+            "last_epoch_index": self.last_epoch_index,
             "model_state_dict": self.model.state_dict(),
             "optimizer_State_dict": self.optimizer.state_dict(),
             "loss_state_dict": self.loss_fn.state_dict()
         }, file_path)
-
+        
+        return file_path
+    
     # def set_learning_rate(self):
         # """
         # Set learning rate for each epoch.

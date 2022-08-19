@@ -31,8 +31,7 @@ class CreateImgGtPair:
         image. Type of the returned iamges is float with values between [0, 255].
         """
         font_size = 35
-        # str_length = randint(1, 22)
-        str_length = randint(1, 22)
+        str_length = randint(self.params["gt_length_interval"][0], self.params["gt_length_interval"][1])
         gt = ""  # Ground truth store here
         for _ in range(str_length):
             gt += random_from_list(self.wordlist) + " "
