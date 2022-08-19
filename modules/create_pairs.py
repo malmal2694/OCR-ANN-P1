@@ -2,7 +2,7 @@ from random import randint
 from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageMorph, ImageEnhance
 from os import path
 from modules.utils import random_from_list
-from numpy import array, float32
+from numpy import array, float32, float16
 
 
 class CreateImgGtPair:
@@ -63,7 +63,7 @@ class CreateImgGtPair:
         brightness_image = ImageEnhance.Brightness(image)
         brightnenss_value = self.params["brightness"]
         image = brightness_image.enhance(brightnenss_value)
-        image = array(image, dtype=float32)  # Convert PIL image to the Numpy.flaot32 array
+        image = array(image, dtype=float16)  # Convert PIL image to the Numpy.flaot32 array
         details = f"""fontname: {path.split(font_path)[1]}, fontsize: {font_size}, 
 morphology: {morph_type}, brightness: {brightnenss_value}"""
         return (image, gt, details)

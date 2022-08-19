@@ -1,15 +1,21 @@
 from .dataset import dataloader_collate_fn
 import torch.optim as optim
-# from torch.nn import CTCLoss
 from torch.utils.data import DataLoader
 import torch
 import torch.nn.functional as F
 from torch import nn
+from os import path
+from pathlib import Path
 
 class TrainModel:
-    def __init__(self, model, dataset, model_params, dataset_params):
+    def __init__(self, model, dataset, model_params:dict, dataset_params:dict, show_log_steps:int, save_check_step:int) -> None:
         """
         model: Name of model to train
+        
+        Parameters
+        ----------
+        show_log_step (int): Show log of the model at each "show_log_step" epoch
+        save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
         """
         self.device = model_params["training_params"]["device"]
         self.model = model(model_params).to(self.device)
@@ -21,8 +27,17 @@ class TrainModel:
             shuffle=True,
             collate_fn=dataloader_collate_fn,
         )
-
-    def fit(self, opt_lr, num_epoch=2, debug_mode=False):
+        self.show_log_step = show_log_steps
+        self.loss_fn = CTCLoss(blank=0)
+        # The last epoch executed in the last run
+        self.epoch_index = 0
+        self.lr = self.model_params["training_params"]["min_opt_lr"]
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        self.max_epoch = self.model_params["training_params"]["lr_steps"][2]
+        self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
+        self.save_check_step = save_check_step
+        
+    def fit(self, debug_mode=False):
         """
         Train the model
         
@@ -30,19 +45,16 @@ class TrainModel:
         ----------
         debug_mode: If true, show more information in training
         """
-        optimizer = optim.Adam(self.model.parameters(), lr=opt_lr)
-        # loss_fn = CTCLoss(blank=0, reduction="sum", zero_infinity=True)
-        loss_fn = CTCLoss(blank=0)
-        if debug_mode: torch.autograd.set_detect_anomaly(True)
+        torch.autograd.set_detect_anomaly(True)
             
-        for epoch in range(num_epoch):
+        for epoch in range(self.epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
                 # zero the parameter gradients
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
 
                 # forward + backward + optimize
                 output = self.model(imgs)
@@ -57,14 +69,68 @@ class TrainModel:
                 #     torch.tensor(imgs.size(0) * [output.size(0)]),
                 #     torch.tensor([gts.size(0) * [gts.size(1)]]),
                 # )
-                loss = loss_fn(output, gts)
+                loss = self.loss_fn(output, gts)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
 
                 running_loss += loss.item()
-                if i % 5 == 0:
-                    print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / 5):.5f}")
+                if i % self.show_log_step == 0:
+                    print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
+                    
+            if epoch % self.save_check_step == 0:
+                out = self.save_checkpoint()
+                print(f"Iteration {i} of epoch {epoch}) Checkpoint saved. checkpoint path: {out}")
+                
+    def load_checkpoint(self, file_name:str) -> None:
+        """
+        Load the checkpoint.
+        Checkpoints contain, parameters of the model, optimizer, loss value, and index of the last epoch.
+        
+        Parameters
+        ----------
+        file_name (str): Name of the file. (e.g., file-name.pt)
+        """
+        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name))
+        self.epoch_index = checkpoint["last_epoch_index"]
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
+
+    def save_checkpoint(self) -> str:
+        """
+        Parameters
+        ----------
+        file_name (str): Name of file to store in the dir_path directory. 
+        (e.g., file-name not file-name-cp-10.pt)(cp: check point)
+        
+        Returns
+        -------
+        Path and name of the file that created
+        """
+        file_name = self.model_params["training_params"]["checkpoint_name"]
+        hash_count = file_name.count("#")
+        file_name = file_name.replace(hash_count * "#", format(self.epoch_index, f"0{hash_count}d"))
+        file_path = path.join(self.checkpoint_dir, file_name)
+        # If file with the same name exist, throw an error
+        if Path(file_path).is_file():
+            raise FileExistsError(f"A file  with the same name and path exist.\nFile name: {file_path}")
+        torch.save({
+            "last_epoch_index": self.epoch_index,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_State_dict": self.optimizer.state_dict(),
+            "loss_state_dict": self.loss_fn.state_dict()
+        }, file_path)
+
+    # def set_learning_rate(self):
+        # """
+        # Set learning rate for each epoch.
+        # Learning rate is variable such that at first learning rate is increasing 
+        # (from min_lr_rate to max_lr_rate), then the learning rate becomes decreasing, 
+        # and in the remaining epochs, the learning rate is constant and its value 
+        # is min_lr_rate value.
+        # """
+        # nn.Module.sav
 
 class CTCLoss(nn.Module):
     """
@@ -106,3 +172,5 @@ class CTCLoss(nn.Module):
         target_lengths = torch.count_nonzero(targets, axis=1)
 
         return F.ctc_loss(preds, targets, pred_lengths, target_lengths, blank=self.blank, zero_infinity=True)
+    
+    

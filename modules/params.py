@@ -45,79 +45,6 @@ params = {
             "../create-data/complete.wordlist"
         ),
     },
-    "dataset_params": {
-        "datasets": {
-            # dataset_name: "../../../Datasets/formatted/{}_lines".format(dataset_name),
-        },
-        "train": {
-            # "name": "{}-train".format(dataset_name),
-            # "datasets": [dataset_name, ],
-        },
-        "valid": {
-            # "{}-valid".format(dataset_name): [dataset_name, ],
-        },
-        # "dataset_class": OCRDataset,
-        "config": {
-            "width_divisor": 8,  # Image width will be divided by 8
-            "height_divisor": 32,  # Image height will be divided by 32
-            "padding_value": 0,  # Image padding value
-            "padding_token": 1000,  # Label padding value (None: default value is chosen)
-            "charset_mode": "CTC",  # add blank token
-            "constraints": ["CTC_line"],  # Padding for CTC requirements if necessary
-            "preprocessings": [
-                {
-                    "type": "dpi",  # modify image resolution
-                    "source": 300,  # from 300 dpi
-                    "target": 150,  # to 150 dpi
-                },
-                {
-                    "type": "to_RGB",
-                    # if grayscale image, produce RGB one (3 channels with same value) otherwise do nothing
-                },
-            ],
-            # Augmentation techniques to use at training time
-            "augmentation": {
-                "dpi": {
-                    "proba": 0.2,
-                    "min_factor": 0.75,
-                    "max_factor": 1.25,
-                },
-                "perspective": {
-                    "proba": 0.2,
-                    "min_factor": 0,
-                    "max_factor": 0.3,
-                },
-                "elastic_distortion": {
-                    "proba": 0.2,
-                    "max_magnitude": 20,
-                    "max_kernel": 3,
-                },
-                "random_transform": {
-                    "proba": 0.2,
-                    "max_val": 16,
-                },
-                "dilation_erosion": {
-                    "proba": 0.2,
-                    "min_kernel": 1,
-                    "max_kernel": 3,
-                    "iterations": 1,
-                },
-                "brightness": {
-                    "proba": 0.2,
-                    "min_factor": 0.01,
-                    "max_factor": 1,
-                },
-                "contrast": {
-                    "proba": 0.2,
-                    "min_factor": 0.01,
-                    "max_factor": 1,
-                },
-                "sign_flipping": {
-                    "proba": 0.2,
-                },
-            },
-        },
-    },
     "model_params": {
         # Model classes to use for each module
         # "models": {
@@ -128,6 +55,7 @@ params = {
         "input_channels": 3,  # 1 for grayscale images, 3 for RGB ones (or grayscale as RGB)
         "dropout": 0.5,  # dropout probability for standard dropout (half dropout probability is taken for spatial dropout)
     },
+    # List of transforms that apply on the image
     "training_params": {
         "img_transforms": Compose(
             [
@@ -136,10 +64,24 @@ params = {
                 Resize((200, 2000)),
                 Normalize(),
             ]
-        ),  # List of transforms that apply on the image
+        ),
         "vocab_size": 109,  # Note that acount space character too.
-        "opt_lr": 0.0001,  # Learning rate of Adam optimizer
-        "output_folder": "fcn_iam_line",  # folder names for logs and weigths
+        "min_opt_lr": 0.0004,  # Minimum learning rate we can reach
+        "max_opt_lr": 0.005, # Maximum learning rate we can reach
+        # The first element represents the epoch that we'll reach to the max_opt_lr 
+        # (from min_opt_lr) learning rate, and the second element is the index of 
+        # the epoch that we'll achieve to the min_opt_lr (from max_opt_lr) learning 
+        # rate in that epoch, and finaally the third element of the list represents 
+        # the epoch that when we complete the training will be done.
+        "lr_Steps": [50, 100, 2000],
+        "checkpoint_dir": path.join( # Directory the checkpoint files store and read from
+            path.abspath(path.dirname(__file__)),
+            "../create-data/checkpoints"
+        ),
+        # Name of the checkpoint file. Instead of the # character, the index of the 
+        # current epoch will replace. The number of the # character shows the 
+        # length of the number that will replace.
+        "checkpoint_name": "checkpoint-####.pt",
         "max_nb_epochs": 5000,  # max number of epochs for the training
         "max_training_time": 3600 * (24 + 23),  # max training time limit (in seconds)
         "load_epoch": "best",  # ["best", "last"], to load weights from best epoch or last trained epoch
