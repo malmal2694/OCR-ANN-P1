@@ -136,5 +136,7 @@ def dataloader_collate_fn(batch):
     for i, data in enumerate(batch):
         gts[i][: len(data["gt"])] = data["gt"]
 
-    imgs = torch.stack([data["img"] for data in batch], dim=0)
+    longest_height = max(data["img"].shape[1] for data in batch)
+    longest_width = max(data["img"].shape[2] for data in batch)
+    imgs = torch.stack([resize(data["img"], (longest_height, longest_width)) for data in batch], dim=0)
     return {"gt": gts, "img": imgs}

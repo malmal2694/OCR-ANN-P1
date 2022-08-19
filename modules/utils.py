@@ -15,7 +15,8 @@ def random_from_list(input_list):
 def show_imgs(imgs, gts, details, permute=False):
     """
     Show image batches from a tensor. Note that the first dimension of each image is
-    width, the second is height, and the third is the number of the image's channel.
+    height, the second is width, and the third is the number of the image's channel.
+    (Note that type of the image shouldn't be Numpy.float16. If use that, raise an error)
     Parameters
     ----------
     imgs(list): A list of images; the type of each image should be float Numpy or
@@ -33,7 +34,7 @@ def show_imgs(imgs, gts, details, permute=False):
         gt = get_display(gt)
         gt += "\n" + details[i]
         if type(img) == Tensor and permute:
-            img = img.permute(2, 0, 1)
+            img = img.permute(2, 1, 0)
         elif type(img) != Tensor and permute:
             raise TypeError(
                 f'"permute=True" works just on torch.Tensor type, not on {type(img)}.'
