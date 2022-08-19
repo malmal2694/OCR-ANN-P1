@@ -31,6 +31,7 @@ class CreateImgGtPair:
         image. Type of the returned iamges is float with values between [0, 255].
         """
         font_size = 35
+        # str_length = randint(1, 22)
         str_length = randint(1, 22)
         gt = ""  # Ground truth store here
         for _ in range(str_length):
