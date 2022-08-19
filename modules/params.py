@@ -28,7 +28,7 @@ params = {
             [], [], [], [],
             [],
         ],
-        "gt_length_interval": (1, 10),
+        "gt_length_interval": [1, 10],
         # List of images for background
         "background_list": glob.glob(
             path.join(path.dirname(__file__), "../create-data/backgrounds/*")

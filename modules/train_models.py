@@ -116,7 +116,7 @@ class TrainModel:
         if Path(file_path).is_file():
             raise FileExistsError(f"A file  with the same name and path exist.\nFile name: {file_path}")
         torch.save({
-            "last_epoch_index": self.last_epoch_index,
+            "last_epoch_index": index,
             "model_state_dict": self.model.state_dict(),
             "optimizer_State_dict": self.optimizer.state_dict(),
             "loss_state_dict": self.loss_fn.state_dict()
