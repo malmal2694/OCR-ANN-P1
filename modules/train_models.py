@@ -166,8 +166,9 @@ class CTCLoss(nn.Module):
         -------
         torch.Tensor: Loss scalar.
         """
-        preds = preds.log_softmax(-1)
-        batch, seq_len, classes = preds.shape
+        # preds = preds.log_softmax(-1)
+        # batch, seq_len, classes = preds.shape
+        batch, classes, seq_len = preds.shape
         # preds = preds.permute(1, 0, 2) # since ctc_loss needs (T, N, C) inputs
         preds = preds.permute(2, 0, 1)
         pred_lengths = torch.full(size=(batch,), fill_value=seq_len, dtype=torch.long)
