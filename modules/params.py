@@ -61,19 +61,14 @@ params = {
             [
                 CodingString(unique_chars_map_file),
                 ToTensor(),
-                Resize((200, 2000)),
+                # Resize((200, 2000)),
                 Normalize(),
             ]
         ),
         "vocab_size": 109,  # Note that acount space character too.
         "min_opt_lr": 0.0004,  # Minimum learning rate we can reach
         "max_opt_lr": 0.005, # Maximum learning rate we can reach
-        # The first element represents the epoch that we'll reach to the max_opt_lr 
-        # (from min_opt_lr) learning rate, and the second element is the index of 
-        # the epoch that we'll achieve to the min_opt_lr (from max_opt_lr) learning 
-        # rate in that epoch, and finaally the third element of the list represents 
-        # the epoch that when we complete the training will be done.
-        "lr_Steps": [50, 100, 2000],
+        "epoch_numbers": 2000, # Maximum number of epoches
         "checkpoint_dir": path.join( # Directory the checkpoint files store and read from
             path.abspath(path.dirname(__file__)),
             "../create-data/checkpoints"

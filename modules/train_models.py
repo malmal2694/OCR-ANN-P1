@@ -14,7 +14,7 @@ class TrainModel:
         
         Parameters
         ----------
-        show_log_step (int): Show log of the model at each "show_log_step" epoch
+        show_log_step (int): Show log of the model at each "show_log_step" dataloader iteration
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
         """
         self.device = model_params["training_params"]["device"]
@@ -33,7 +33,7 @@ class TrainModel:
         self.epoch_index = 0
         self.lr = self.model_params["training_params"]["min_opt_lr"]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
-        self.max_epoch = self.model_params["training_params"]["lr_steps"][2]
+        self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
         
