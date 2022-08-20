@@ -94,7 +94,7 @@ class TrainModel:
         checkpoint = torch.load(path.join(self.checkpoint_dir, file_name))
         self.last_epoch_index = checkpoint["last_epoch_index"] + 1
         self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint['optimizer_State_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
 
     def save_checkpoint(self, index:int) -> str:
