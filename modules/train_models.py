@@ -32,9 +32,9 @@ class TrainModel:
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
         self.last_epoch_index = 0
+        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
-        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
         
