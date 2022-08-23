@@ -18,7 +18,6 @@ class TrainModel:
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
         lr (int): If it doesn't save, use the learning rate specified in the parameters dictionary
         """
-        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
         self.device = model_params["training_params"]["device"]
         self.model = model(model_params).to(self.device)
         dataset = dataset(dataset_params)
@@ -35,6 +34,7 @@ class TrainModel:
         self.last_epoch_index = 0
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
+        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
         
