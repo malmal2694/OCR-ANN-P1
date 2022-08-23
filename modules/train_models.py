@@ -8,7 +8,7 @@ from os import path
 from pathlib import Path
 
 class TrainModel:
-    def __init__(self, model, dataset, model_params:dict, dataset_params:dict, show_log_steps:int, save_check_step:int) -> None:
+    def __init__(self, model, dataset, model_params:dict, dataset_params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
         """
         model: Name of model to train
         
@@ -16,7 +16,9 @@ class TrainModel:
         ----------
         show_log_step (int): Show log of the model at each "show_log_step" dataloader iteration
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
+        lr (int): If it doesn't save, use the learning rate specified in the parameters dictionary
         """
+        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
         self.device = model_params["training_params"]["device"]
         self.model = model(model_params).to(self.device)
         dataset = dataset(dataset_params)
@@ -31,7 +33,6 @@ class TrainModel:
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
         self.last_epoch_index = 0
-        self.lr = self.model_params["training_params"]["min_opt_lr"]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
