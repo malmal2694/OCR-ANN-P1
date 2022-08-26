@@ -32,10 +32,10 @@ class TrainModel:
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
         self.last_epoch_index = 0
-        self.lr = self.model_params["training_params"]["min_opt_lr"] if lr == None else lr
+        self.lr = self.params["training_params"]["min_opt_lr"] if lr == None else lr
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
-        self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
-        self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
+        self.max_epoch = self.params["training_params"]["epoch_numbers"]
+        self.checkpoint_dir = self.params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
         self.decode_string = DecodeString(params["unique_chars_map_file"])
         
@@ -114,7 +114,7 @@ class TrainModel:
         -------
         Path and name of the file that created
         """
-        file_name = self.model_params["training_params"]["checkpoint_name"]
+        file_name = self.params["training_params"]["checkpoint_name"]
         hash_count = file_name.count("#")
         file_name = file_name.replace(hash_count * "#", format(index, f"0{hash_count}d"))
         file_path = path.join(self.checkpoint_dir, file_name)
