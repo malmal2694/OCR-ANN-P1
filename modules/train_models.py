@@ -80,7 +80,7 @@ class TrainModel:
                     running_loss = 0
                     # Create a test set and an estimate for this set
                     test_set = self.dataset[0]
-                    pred_gt = self.model(test_set["img"])
+                    pred_gt = self.model(test_set["img"].to(self.device))
                     print(f"Real gt: {test_set['gt']}\nPredicted gt: {pred_gt}")
                     
             if epoch % self.save_check_step == 0:
