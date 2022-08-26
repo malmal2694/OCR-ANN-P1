@@ -1,4 +1,4 @@
-from . import dataloader_collate_fn, DecodeString
+from .dataset import dataloader_collate_fn, DecodeString
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
@@ -8,7 +8,7 @@ from os import path
 from pathlib import Path
 
 class TrainModel:
-    def __init__(self, model, dataset, model_params:dict, dataset_params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
+    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
         """
         model: Name of model to train
         
@@ -18,13 +18,13 @@ class TrainModel:
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
         lr (int): If it doesn't set, use the learning rate specified in the parameters dictionary
         """
-        self.device = model_params["training_params"]["device"]
-        self.model = model(model_params).to(self.device)
-        self.dataset = dataset(dataset_params)
-        self.model_params = model_params
+        self.device = params["training_params"]["device"]
+        self.model = model(params).to(self.device)
+        self.dataset = dataset(params)
+        self.params = params
         self.dataloader = DataLoader(
             self.dataset,
-            batch_size=model_params["training_params"]["batch_size"],
+            batch_size = params["training_params"]["batch_size"],
             shuffle=True,
             collate_fn=dataloader_collate_fn,
         )
@@ -37,7 +37,7 @@ class TrainModel:
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
-        self.decode_string = DecodeString()
+        self.decode_string = DecodeString(params["unique_chars_map_file"])
         
     def fit(self, debug_mode=False):
         """

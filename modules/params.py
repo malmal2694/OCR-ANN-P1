@@ -1,9 +1,14 @@
 from torchvision.transforms import Compose
-from .dataset import CodingString, ToTensor, Normalize
+from modules.dataset import CodingString, ToTensor, Normalize
 from random import randint
 import glob
 from os import path
 from torch import device
+
+unique_chars_map_file = path.join(
+    path.abspath(path.dirname(__file__)), 
+    "../create-data/unique_chars_map.txt"
+)
 
 params = {
     "unique_chars_map_file": path.join(
@@ -59,7 +64,7 @@ params = {
     "training_params": {
         "img_transforms": Compose(
             [
-                CodingString(),
+                CodingString(unique_chars_map_file),
                 ToTensor(),
                 # Resize((200, 2000)),
                 Normalize(),

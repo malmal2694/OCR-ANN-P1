@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from torchvision.transforms.functional import resize
 import numpy as np
 from modules.create_pairs import CreateImgGtPair
-from .params import params
+
 
 class OCRDataset(Dataset):
     """
@@ -43,8 +43,10 @@ class CodingString:
     (This is a transformer)
     """
 
-    def __init__(self):
-        map_char_file = params["unique_chars_map_file"]
+    def __init__(self, map_char_file):
+        """
+        map_char_file: The path of the file that map chars to ints
+        """
         with open(map_char_file, "r") as f:
             uniq_file = f.readlines()
         # Create a dict that maps unique chars to ints
@@ -75,7 +77,9 @@ class DecodeString:
     Decode the string is encoded
     """
     def __init__(self, map_char_file):
-        map_char_file = params["unique_chars_map_file"]
+        """
+        map_char_file: The path of the file that map chars to ints
+        """
         with open(map_char_file, "r") as f:
             uniq_file = f.readlines()
         # Create a dict that maps unique chars to ints
