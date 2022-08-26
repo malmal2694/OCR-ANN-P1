@@ -16,14 +16,14 @@ class TrainModel:
         ----------
         show_log_step (int): Show log of the model at each "show_log_step" dataloader iteration
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
-        lr (int): If it doesn't save, use the learning rate specified in the parameters dictionary
+        lr (int): If it doesn't set, use the learning rate specified in the parameters dictionary
         """
         self.device = model_params["training_params"]["device"]
         self.model = model(model_params).to(self.device)
-        dataset = dataset(dataset_params)
+        self.dataset = dataset(dataset_params)
         self.model_params = model_params
         self.dataloader = DataLoader(
-            dataset,
+            self.dataset,
             batch_size=model_params["training_params"]["batch_size"],
             shuffle=True,
             collate_fn=dataloader_collate_fn,
@@ -37,7 +37,7 @@ class TrainModel:
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
-        
+
     def fit(self, debug_mode=False):
         """
         Train the model
@@ -54,9 +54,10 @@ class TrainModel:
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
+                running_loss += loss.item()
+                    
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
-
                 # forward + backward + optimize
                 output = self.model(imgs)
                 if debug_mode:
@@ -74,10 +75,13 @@ class TrainModel:
                 loss.backward()
                 self.optimizer.step()
 
-                running_loss += loss.item()
                 if i % self.show_log_step == 0:
                     print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
+                    # Create a test set and an estimate for this set
+                    test_set = self.dataset[0]
+                    pred_gt = self.model(test_set["img"])
+                    print(f"Real gt: {test_set['gt']}\nPredicted gt: {pred_gt}")
                     
             if epoch % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch)
@@ -176,5 +180,4 @@ class CTCLoss(nn.Module):
         target_lengths = torch.count_nonzero(targets, axis=1)
 
         return F.ctc_loss(preds, targets, pred_lengths, target_lengths, blank=self.blank, zero_infinity=True)
-    
     
