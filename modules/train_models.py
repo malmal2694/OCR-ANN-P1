@@ -54,7 +54,6 @@ class TrainModel:
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
-                running_loss += loss.item()
                     
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
@@ -75,6 +74,7 @@ class TrainModel:
                 loss.backward()
                 self.optimizer.step()
 
+                running_loss += loss.item()
                 if i % self.show_log_step == 0:
                     print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
