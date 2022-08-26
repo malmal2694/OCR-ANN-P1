@@ -5,12 +5,11 @@ import glob
 from os import path
 from torch import device
 
-unique_chars_map_file = path.join(
-    path.abspath(path.dirname(__file__)), 
-    "../create-data/unique_chars_map.txt"
-)
-
 params = {
+    "unique_chars_map_file": path.join(
+        path.abspath(path.dirname(__file__)), 
+        "../create-data/unique_chars_map.txt"
+    ),
     "artificial_dataset": {
         "fontlist": glob.glob(
             path.join(path.dirname(__file__), 
@@ -60,7 +59,7 @@ params = {
     "training_params": {
         "img_transforms": Compose(
             [
-                CodingString(unique_chars_map_file),
+                CodingString(),
                 ToTensor(),
                 # Resize((200, 2000)),
                 Normalize(),

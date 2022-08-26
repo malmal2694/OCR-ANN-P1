@@ -1,4 +1,4 @@
-from .dataset import dataloader_collate_fn
+from .dataset import dataloader_collate_fn, DecodeString
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
@@ -37,7 +37,8 @@ class TrainModel:
         self.max_epoch = self.model_params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.model_params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
-
+        self.decode_string = DecodeString()
+        
     def fit(self, debug_mode=False):
         """
         Train the model
@@ -80,8 +81,8 @@ class TrainModel:
                     running_loss = 0
                     # Create a test set and an estimate for this set
                     test_set = self.dataset[0]
-                    pred_gt = self.model(test_set["img"].to(self.device))
-                    print(f"Real gt: {test_set['gt']}\nPredicted gt: {pred_gt}")
+                    pred_gt = self.decode_string[self.model(test_set["img"].to(self.device))]
+                    print(f"Real gt: {self.decode_string[test_set['gt']]}\nPredicted gt: {pred_gt}")
                     
             if epoch % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch)

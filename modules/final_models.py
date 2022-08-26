@@ -1,12 +1,12 @@
 from torch.nn import Module, Sequential
-from .line_model import l_decoder, l_encoder
+from . import decoder, encoder
 
 
 class LineRecognition(Module):
     def __init__(self, params):
         super().__init__()
         self.model = Sequential(
-            l_encoder.FCN_Encoder(params), l_decoder.LineDecoder(params)
+            encoder.FCN_Encoder(params), decoder.LineDecoder(params)
         )
 
     def forward(self, sample):
