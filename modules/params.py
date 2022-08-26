@@ -1,5 +1,5 @@
 from torchvision.transforms import Compose
-from modules.dataset import CodingString, ToTensor, Normalize, Resize
+from .dataset import CodingString, ToTensor, Normalize
 from random import randint
 import glob
 from os import path

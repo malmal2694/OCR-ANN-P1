@@ -1,4 +1,4 @@
-from .dataset import dataloader_collate_fn, DecodeString
+from . import dataloader_collate_fn, DecodeString
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
