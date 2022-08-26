@@ -88,7 +88,7 @@ class DecodeString:
             self.int_to_char_map[int(line[2:5])] = [line[0]]
         # vocab_size is the number of unique chars plus one that represent blank char.
         # Refer to CTC loss algorithm.
-        self.vocab_size = len(self.char_to_int_map)  # + 1
+        self.vocab_size = len(self.int_to_char_map)  # + 1
         
     def __call__(self, encoded_str):
         """
