@@ -89,7 +89,7 @@ class DecodeString:
         # vocab_size is the number of unique chars plus one that represent blank char.
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.int_to_char_map)  # + 1
-        
+
     def __call__(self, encoded_str):
         """
         Map the encoded string to a decoded string and then return it.
@@ -98,9 +98,10 @@ class DecodeString:
         ----------
         encoded_str (str): the encoded string we want to decode it.
         """
+        print(encoded_str.shape)
         txt_out = ""
         for coded_char in encoded_str:
-            txt_out = np.append(txt_out, self.int_to_char_map[coded_char])
+            txt_out += self.int_to_char_map[coded_char]
         return txt_out
     
 class Normalize:
