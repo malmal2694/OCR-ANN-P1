@@ -19,7 +19,7 @@ sort temp.wordlist| uniq -u > complete.wordlist && rm temp.wordlist
 python3 -m venv env_name
 
 7) Install these Python packages:
-pip install torch torchvision ipykernel scikit-image matplotlib Pillow numpy python-bidi arabic-reshaper
+pip install torch torchvision ipykernel matplotlib Pillow numpy python-bidi arabic-reshaper
 
 
 --------------------------------------------------------------------------------

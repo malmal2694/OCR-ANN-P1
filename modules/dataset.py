@@ -1,9 +1,5 @@
 import torch
 from torch.utils.data import Dataset
-import glob
-from os.path import join, basename, splitext
-from os import sep
-from skimage import io
 from torchvision.transforms.functional import resize
 import numpy as np
 from modules.create_pairs import CreateImgGtPair
