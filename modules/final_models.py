@@ -1,5 +1,5 @@
 from torch.nn import Module, Sequential
-from line_model import l_decoder, l_encoder
+from .line_model import l_decoder, l_encoder
 
 
 class LineRecognition(Module):
