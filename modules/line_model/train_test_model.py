@@ -1,4 +1,4 @@
-from .dataset import dataloader_collate_fn, DecodeString
+from .dataset import dataloader_collate_fn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch import nn
 from os import path
 from pathlib import Path
+from ..utils import DecodeString
 
 class TrainModel:
     def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
@@ -37,7 +38,7 @@ class TrainModel:
         self.max_epoch = self.params["training_params"]["epoch_numbers"]
         self.checkpoint_dir = self.params["training_params"]["checkpoint_dir"]
         self.save_check_step = save_check_step
-        self.decode_string = DecodeString(params["unique_chars_map_file"])
+        self.test_model = TestModel(self.model, self.device, self.params["unique_chars_map_file"])
         
     def fit(self, debug_mode=False):
         """
@@ -55,7 +56,7 @@ class TrainModel:
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
-                    
+                
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
                 # forward + backward + optimize
@@ -79,10 +80,9 @@ class TrainModel:
                 if i % self.show_log_step == 0:
                     print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
-                    # Create a test set and an estimate for this set
+                    # Create a test set and a prediction for this set
                     test_set = self.dataset[0]
-                    pred_gt = self.decode_string(self.model(test_set["img"].to(self.device)))
-                    print(f"Real gt: {self.decode_string[test_set['gt']]}\nPredicted gt: {pred_gt}")
+                    self.test_model(test_set["gt"], test_set["img"].unsqueeze(0))
                     
             if epoch % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch)
@@ -97,7 +97,7 @@ class TrainModel:
         ----------
         file_name (str): Name of the file. (e.g., file-name.pt)
         """
-        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name))
+        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name), map_location=self.device)
         self.last_epoch_index = checkpoint["last_epoch_index"] + 1
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -130,16 +130,47 @@ class TrainModel:
         
         return file_path
     
-    # def set_learning_rate(self):
-        # """
-        # Set learning rate for each epoch.
-        # Learning rate is variable such that at first learning rate is increasing 
-        # (from min_lr_rate to max_lr_rate), then the learning rate becomes decreasing, 
-        # and in the remaining epochs, the learning rate is constant and its value 
-        # is min_lr_rate value.
-        # """
-        # nn.Module.sav
-
+class TestModel:
+    """
+    Test the given model
+    """
+    def __init__(self, model, device, map_char_file:str):
+        """
+        Parameters
+        ----------
+        model: A object of the model not a class of the model
+        device: The device the model is on
+        map_char_file (str): Address of the file maps int to char
+        """
+        self.model = model
+        self.device = device
+        self.decode_string = DecodeString(map_char_file)
+        
+    def __call__(self, gt:str, img):
+        """
+        Parameters
+        ----------
+        gt: True gt that contains in the ``img``
+        """
+        pred_gt = self.model(img.to(self.device)) # Predicted gt returned from the model
+        
+        # Return characters with highest probability.
+        # An example is below:
+        # pred_gt =  torch.tensor([
+        #     [[1,2,3]],
+        #     [[4,50,6]],
+        #     [[1,6,3]],
+        #     [[5,8,4]]
+        # ])
+        # pred_gt.max(0):
+        # torch.return_types.max(
+        # values=tensor([[ 5, 50,  6]]),
+        # indices=tensor([[3, 1, 1]]))
+        pred_gt = pred_gt.max(1).indices.flatten()
+        
+        pred_gt = self.decode_string(pred_gt)
+        print(f"Real gt: {self.decode_string(gt)}\nPredicted gt: {pred_gt}")
+                    
 class CTCLoss(nn.Module):
     """
     Convenient wrapper for CTCLoss that handles log_softmax and taking 

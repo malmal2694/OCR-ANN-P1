@@ -1,9 +1,10 @@
 from torchvision.transforms import Compose
-from modules.dataset import CodingString, ToTensor, Normalize
+from .line_model.dataset import CodingString, ToTensor, Normalize
 from random import randint
 import glob
 from os import path
 from torch import device
+from torch.cuda import is_available
 
 unique_chars_map_file = path.join(
     path.abspath(path.dirname(__file__)), 
@@ -88,9 +89,8 @@ params = {
         "interval_save_weights": None,  # None: keep best and last only
         "use_ddp": False,  # Use DistributedDataParallel
         "use_apex": True,  # Enable mix-precision with apex package
-        # "device": device("cuda:0"), # The device that all operations do on it
-        "device": device("cuda:0"),
-        # "nb_gpu": torch.cuda.device_count(),
+        # Use GPU is available else use gpu
+        "device": device("cuda:0" if is_available() else "cpu"),
         "batch_size": 16,  # mini-batch size per GPU
         "optimizer": {
             # "class": Adam,

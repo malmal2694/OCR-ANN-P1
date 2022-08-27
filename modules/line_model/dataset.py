@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.transforms.functional import resize
 import numpy as np
-from modules.create_pairs import CreateImgGtPair
+from .create_pairs import CreateImgGtPair
 
 
 class OCRDataset(Dataset):
@@ -72,38 +72,6 @@ class CodingString:
         sample["gt"] = txt_out
         return sample
 
-class DecodeString:
-    """
-    Decode the string is encoded
-    """
-    def __init__(self, map_char_file):
-        """
-        map_char_file: The path of the file that map chars to ints
-        """
-        with open(map_char_file, "r") as f:
-            uniq_file = f.readlines()
-        # Create a dict that maps unique chars to ints
-        self.int_to_char_map = {}
-        for line in uniq_file:
-            self.int_to_char_map[int(line[2:5])] = [line[0]]
-        # vocab_size is the number of unique chars plus one that represent blank char.
-        # Refer to CTC loss algorithm.
-        self.vocab_size = len(self.int_to_char_map)  # + 1
-
-    def __call__(self, encoded_str):
-        """
-        Map the encoded string to a decoded string and then return it.
-
-        Parameters
-        ----------
-        encoded_str (str): the encoded string we want to decode it.
-        """
-        print(encoded_str.shape)
-        txt_out = ""
-        for coded_char in encoded_str:
-            txt_out += self.int_to_char_map[coded_char]
-        return txt_out
-    
 class Normalize:
     """
     Rescale value of pixels to have value between 0 and 1 and then rescale again

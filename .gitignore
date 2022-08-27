@@ -12,3 +12,4 @@ create-data/checkpoints/
 bin/
 test.ipynb
 __pycache__/
+modules/line_model/__pycache__

@@ -60,3 +60,36 @@ def create_char_to_int_map_file(unique_char_file, map_file):
         for index, line in enumerate(uniq_file, start=1):
             # Split the unique characters and assign to them an unique numberand save them
             f.write(f"{line[0]}#{format(index, '03d')}\n")
+    
+class DecodeString:
+    """
+    Decode the encoded string
+    """
+    def __init__(self, map_char_file):
+        """
+        map_char_file: The path of the file that map chars to ints
+        """
+        with open(map_char_file, "r") as f:
+            uniq_file = f.readlines()
+        # Create a dict that maps unique chars to ints
+        self.int_to_char_map = {}
+        for line in uniq_file:
+            self.int_to_char_map[int(line[2:5])] = line[0]
+        # vocab_size is the number of unique chars plus one that represent blank char.
+        # Refer to CTC loss algorithm.
+        self.vocab_size = len(self.int_to_char_map)  # + 1
+
+    def __call__(self, encoded_str):
+        """
+        Map the encoded string to a decoded string and then return it.
+
+        Parameters
+        ----------
+        encoded_str (str): the encoded string we want to decode it.
+        """
+        txt_out = ""
+        for coded_char in encoded_str:
+            if coded_char != 0: # coded_char wasn't blank character(defined in CTC class)
+                # coded_char is tensor type, then we convert it to int
+                txt_out += self.int_to_char_map[int(coded_char)]
+        return txt_out
