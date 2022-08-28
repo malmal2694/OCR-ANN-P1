@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import nn
 from os import path
 from pathlib import Path
-from ..utils import DecodeString
+from .utils import DecodeString
 
 class TrainModel:
     def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
