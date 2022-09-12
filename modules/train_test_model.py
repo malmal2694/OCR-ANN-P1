@@ -179,16 +179,16 @@ class TestModel:
         # pred_gt = self.decode_string(pred_gt)
         return pred_gt
 
-    def load_checkpoint(self, file_name:str) -> None:
+    def load_checkpoint(self, checkpoint_path:str) -> None:
         """
         Load the checkpoint.
         Checkpoints contain parameters of the model, optimizer, loss value, and index of the last epoch.
         
         Parameters
         ----------
-        file_name (str): Name of the file. (e.g., file-name.pt)
+        checkpoint_path (str): path of the checkpoint. (e.g., checkpoint/path/file-name.pt)
         """
-        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name), map_location=self.device)
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
 
 class CTCLoss(nn.Module):
