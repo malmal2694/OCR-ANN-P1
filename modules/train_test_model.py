@@ -135,7 +135,7 @@ class TestModel:
     """
     Test the given model
     """
-    def __init__(self, params:dict, model, device, map_char_file:str):
+    def __init__(self, params:dict, model, map_char_file:str):
         """
         Parameters
         ----------
@@ -145,7 +145,7 @@ class TestModel:
         map_char_file (str): Address of the file maps int to char
         """
         self.device = params["training_params"]["device"]
-        self.model = model().to(device)
+        self.model = model().to(self.device)
         self.decode_string = DecodeString(map_char_file)
         self.params = params
         self.normalizer = Normalize(False)
