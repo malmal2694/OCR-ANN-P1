@@ -156,7 +156,8 @@ class TestModel:
         Parameters
         ----------
         img (torch.tensor): Image to convert to text. Note that pixel's value 
-        are in the range of 0-255.
+        are in the range of 0-255. Note that input should be in the shape (C, H, W).
+        (C: Channels, H: Height, W: Width)
         """
         # Predicted gt returned from the model
         img = self.normalizer(img)
@@ -175,8 +176,7 @@ class TestModel:
         # values=tensor([[ 5, 50,  6]]),
         # indices=tensor([[3, 1, 1]]))
         # pred_gt = pred_gt.max(1).indices.flatten()
-        
-        # pred_gt = self.decode_string(pred_gt)
+        pred_gt = self.decode_string(pred_gt.max(1)[1])
         return pred_gt
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
