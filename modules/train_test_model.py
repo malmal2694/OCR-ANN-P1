@@ -175,8 +175,9 @@ class TestModel:
         # torch.return_types.max(
         # values=tensor([[ 5, 50,  6]]),
         # indices=tensor([[3, 1, 1]]))
-        # pred_gt = pred_gt.max(1).indices.flatten()
-        pred_gt = self.decode_string(pred_gt.max(1)[1])
+        pred_gt = pred_gt.max(1)[1]
+        # Decode first element in the batch
+        pred_gt = self.decode_string(pred_gt[0])
         return pred_gt
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
