@@ -15,7 +15,7 @@ class OCRDataset(Dataset):
         params (dict): The dict contains all of the parameters
         """
         self.pair = CreateImgGtPair(params["artificial_dataset"])
-        self.transforms = params["training_params"]["img_transforms"]
+        self.transforms = params["training_params"]["transforms"]
         self.image_numbers = params["artificial_dataset"]["image_numbers"]
 
     def __len__(self):
@@ -78,9 +78,18 @@ class Normalize:
     to pixels have value between -1 and +1.
     (This is a transformer)
     """
-
+    def __init__(self, used_in_train=True):
+        """
+        used_in_transformer (bool): when training it should be true and when 
+        evaluating and testing this parameter should be false.
+        """
+        self.used_in_train = used_in_train
+        
     def __call__(self, sample):
-        sample["img"] = ((sample["img"] / 255) - 0.5) / 0.5
+        if self.used_in_train == True:
+            sample["img"] = ((sample["img"] / 255) - 0.5) / 0.5
+        else:
+            sample = ((sample / 255) - 0.5) / 0.5
         return sample
 
 

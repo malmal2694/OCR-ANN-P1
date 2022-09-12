@@ -1,4 +1,4 @@
-from .dataset import dataloader_collate_fn
+from .dataset import dataloader_collate_fn, Normalize
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torch
@@ -7,6 +7,7 @@ from torch import nn
 from os import path
 from pathlib import Path
 from .utils import DecodeString
+
 
 class TrainModel:
     def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
@@ -129,30 +130,37 @@ class TrainModel:
         }, file_path)
         
         return file_path
-    
+
 class TestModel:
     """
     Test the given model
     """
-    def __init__(self, model, device, map_char_file:str):
+    def __init__(self, params:dict, model, device, map_char_file:str):
         """
         Parameters
         ----------
+        params (dict): A dictionary contains of the parameters
         model: A object of the model not a class of the model
         device: The device the model is on
         map_char_file (str): Address of the file maps int to char
         """
-        self.model = model
-        self.device = device
+        self.device = params["training_params"]["device"]
+        self.model = model().to(device)
         self.decode_string = DecodeString(map_char_file)
+        self.params = params
+        self.normalizer = Normalize(False)
         
-    def __call__(self, gt:str, img):
+    @torch.no_grad()
+    def __call__(self, img:torch.Tensor) -> str:
         """
         Parameters
         ----------
-        gt: True gt that contains in the ``img``
+        img (torch.tensor): Image to convert to text. Note that pixel's value 
+        are in the range of 0-255.
         """
-        pred_gt = self.model(img.to(self.device)) # Predicted gt returned from the model
+        # Predicted gt returned from the model
+        img = self.normalizer(img)
+        pred_gt = self.model(img.to(self.device))
         
         # Return characters with highest probability.
         # An example is below:
@@ -166,11 +174,23 @@ class TestModel:
         # torch.return_types.max(
         # values=tensor([[ 5, 50,  6]]),
         # indices=tensor([[3, 1, 1]]))
-        pred_gt = pred_gt.max(1).indices.flatten()
+        # pred_gt = pred_gt.max(1).indices.flatten()
         
-        pred_gt = self.decode_string(pred_gt)
-        print(f"Real gt: {self.decode_string(gt)}\nPredicted gt: {pred_gt}")
-                    
+        # pred_gt = self.decode_string(pred_gt)
+        return pred_gt
+
+    def load_checkpoint(self, file_name:str) -> None:
+        """
+        Load the checkpoint.
+        Checkpoints contain parameters of the model, optimizer, loss value, and index of the last epoch.
+        
+        Parameters
+        ----------
+        file_name (str): Name of the file. (e.g., file-name.pt)
+        """
+        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name), map_location=self.device)
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+
 class CTCLoss(nn.Module):
     """
     Convenient wrapper for CTCLoss that handles log_softmax and taking 

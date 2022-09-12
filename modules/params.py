@@ -63,7 +63,7 @@ params = {
     },
     # List of transforms that apply on the image
     "training_params": {
-        "img_transforms": Compose(
+        "transforms": Compose(
             [
                 CodingString(unique_chars_map_file),
                 ToTensor(),
