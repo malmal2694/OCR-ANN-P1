@@ -11,6 +11,21 @@ def random_from_list(input_list):
     """
     return input_list[randint(0, len(input_list) - 1)]
 
+def load_char_map_file(path:str)->dict:
+    """
+    Load a map between characters and numbers.
+    
+    Returns
+    -------
+    A dict maps chars to int.
+    """
+    with open(path, "r") as f:
+        file = f.readlines()
+    # Create a dict that maps unique chars to ints
+    char_to_int_map = {}
+    for line in file:
+        char_to_int_map[line[0]] = int(line[2:5])
+    return char_to_int_map
 
 def show_imgs(imgs, gts, details, permute=False):
     """
