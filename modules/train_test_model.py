@@ -151,7 +151,6 @@ class TestModel:
         self.model = model(params).to(self.device)
         self.decode_string = DecodeString(map_char_file)
         self.params = params
-        self.normalizer = Normalize(False)
         
     @torch.no_grad()
     def __call__(self, imgs:torch.Tensor) -> list:
@@ -159,15 +158,16 @@ class TestModel:
         Parameters
         ----------
         img (torch.tensor): Image to convert to text. Note that pixel's value 
-        are in the range of 0-255. Note that input should be in the shape (N, C, H, W).
-        (N: Size of batch, C: Channels, H: Height, W: Width)
+        are in the range of -1 to 1. Note that input should be in the shape (N, C, H, W).
+        (N: Size of batch, C: Channels, H: Height, W: Width).
         
         Returns
         -------
-        List of decoded outputs of the model.(elements are string)
+        A list with two indices. First index contains a list of strings(decoded) 
+        created by the model (e.g., ["hello", "hi"]). The second index contains 
+        list of encoded texts produced by the model (e.g., [[1, 20, 3], [66, 5, 2]]).
         """
         # Predicted gts returned from the model
-        imgs = self.normalizer(imgs)
         pred_gts = self.model(imgs.to(self.device))
         alphabet = "".join(load_char_map_file(self.map_char_file).keys())
         # Replace blank character with a desired character(we use character "a")
@@ -178,7 +178,7 @@ class TestModel:
             seq, path = viterbi_search(sent.permute(1, 0).numpy().astype(np.float32), alphabet)
             # decoded_out_sent.append(self.decode_string(pred_gt[0]))
             decoded_out_sents.append(seq.replace("a", ""))
-        return decoded_out_sents
+        return decoded_out_sents, path
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
         """

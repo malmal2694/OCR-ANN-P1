@@ -3,6 +3,7 @@ from bidi.algorithm import get_display
 import arabic_reshaper
 import matplotlib.pyplot as plt
 from torch import Tensor
+from numpy import ndarray
 
 
 def random_from_list(input_list):
@@ -94,7 +95,7 @@ class DecodeString:
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.int_to_char_map)  # + 1
 
-    def __call__(self, encoded_str):
+    def __call__(self, encoded_gt:Tensor|ndarray) -> str:
         """
         Map the encoded string to a decoded string and then return it.
 
@@ -103,7 +104,7 @@ class DecodeString:
         encoded_str (str): the encoded string we want to decode it.
         """
         txt_out = ""
-        for coded_char in encoded_str:
+        for coded_char in encoded_gt:
             if coded_char != 0: # coded_char wasn't blank character(defined in CTC class)
                 # coded_char is tensor type, then we convert it to int
                 txt_out += self.int_to_char_map[int(coded_char)]
