@@ -6,7 +6,9 @@ import torch.nn.functional as F
 from torch import nn
 from os import path
 from pathlib import Path
-from .utils import DecodeString
+from .utils import DecodeString, load_char_map_file
+from fast_ctc_decode import viterbi_search
+import numpy as np
 
 
 class TrainModel:
@@ -144,6 +146,7 @@ class TestModel:
         device: The device the model is on
         map_char_file (str): Address of the file maps int to char
         """
+        self.map_char_file = map_char_file
         self.device = params["training_params"]["device"]
         self.model = model(params).to(self.device)
         self.decode_string = DecodeString(map_char_file)
@@ -151,35 +154,31 @@ class TestModel:
         self.normalizer = Normalize(False)
         
     @torch.no_grad()
-    def __call__(self, img:torch.Tensor) -> str:
+    def __call__(self, imgs:torch.Tensor) -> list:
         """
         Parameters
         ----------
         img (torch.tensor): Image to convert to text. Note that pixel's value 
-        are in the range of 0-255. Note that input should be in the shape (C, H, W).
-        (C: Channels, H: Height, W: Width)
+        are in the range of 0-255. Note that input should be in the shape (N, C, H, W).
+        (N: Size of batch, C: Channels, H: Height, W: Width)
+        
+        Returns
+        -------
+        List of decoded outputs of the model.(elements are string)
         """
-        # Predicted gt returned from the model
-        img = self.normalizer(img)
-        pred_gt = self.model(img.to(self.device))
-        
-        # Return characters with highest probability.
-        # An example is below:
-        # pred_gt =  torch.tensor([
-        #     [[1,2,3]],
-        #     [[4,50,6]],
-        #     [[1,6,3]],
-        #     [[5,8,4]]
-        # ])
-        # pred_gt.max(0):
-        # torch.return_types.max(
-        # values=tensor([[ 5, 50,  6]]),
-        # indices=tensor([[3, 1, 1]]))
-        # pred_gt = pred_gt.max(1)[1]
-        # Decode first sentence in the batch
-        
-        # pred_gt = self.decode_string(pred_gt[0])
-        return pred_gt
+        # Predicted gts returned from the model
+        imgs = self.normalizer(imgs)
+        pred_gts = self.model(imgs.to(self.device))
+        alphabet = "".join(load_char_map_file(self.map_char_file).keys())
+        # Replace blank character with a desired character(we use character "a")
+        # Also we suppose the index of blank character is zero
+        alphabet = "a" + alphabet
+        decoded_out_sents = []
+        for sent in pred_gts:
+            seq, path = viterbi_search(sent.permute(1, 0).numpy().astype(np.float32), alphabet)
+            # decoded_out_sent.append(self.decode_string(pred_gt[0]))
+            decoded_out_sents.append(seq.replace("a", ""))
+        return decoded_out_sents
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
         """
