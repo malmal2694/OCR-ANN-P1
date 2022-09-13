@@ -4,6 +4,7 @@ import arabic_reshaper
 import matplotlib.pyplot as plt
 from torch import Tensor
 from numpy import ndarray
+from typing import Union
 
 
 def random_from_list(input_list):
@@ -95,7 +96,7 @@ class DecodeString:
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.int_to_char_map)  # + 1
 
-    def __call__(self, encoded_gt:Tensor|ndarray) -> str:
+    def __call__(self, encoded_gt:Union[Tensor, ndarray]) -> str:
         """
         Map the encoded string to a decoded string and then return it.
 
