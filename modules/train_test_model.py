@@ -179,7 +179,7 @@ class TestModel:
         decoded_out_sents = []
         encoded_out_sents = []
         for sent in pred_gts:
-            seq, path = viterbi_search(sent.permute(1, 0).numpy().astype(np.float32), alphabet)
+            seq, path = viterbi_search(sent.permute(1, 0).cpu().numpy().astype(np.float32), alphabet)
             decoded_out_sents.append(seq)
             encoded_out_sents.append(self.encode(seq))
         return decoded_out_sents, encoded_out_sents
