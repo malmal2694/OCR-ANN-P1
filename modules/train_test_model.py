@@ -154,7 +154,7 @@ class TestModel:
         self.encode = CodingString(map_char_file, used_in_train=False)
 
     @torch.no_grad()
-    def __call__(self, imgs:torch.Tensor):
+    def convert_img2text(self, imgs:torch.Tensor) -> tuple[list, list]:
         """
         Parameters
         ----------

@@ -156,3 +156,22 @@ def create_char_to_int_map_file(unique_char_file, map_file):
         for index, line in enumerate(uniq_file, start=1):
             # Split the unique characters and assign to them an unique numberand save them
             f.write(f"{line[0]}#{format(index, '03d')}\n")
+
+def clean_sentence(input_sent:np.ndarray, sos_index:int, eos_index:int, ignore_token_index=0) -> np.ndarray:
+    """
+    Remove <sos> token, <eos> token and characters after <eos>, and ignore tokens 
+    from sentence and return it.
+    
+    Parameters
+    ----------
+    input_sent (np.ndarray): Input sentence that is a vector with the length of ``input_Sent``.
+    ``input_sent`` should be encoded string.
+    """
+    first_eos_indices = np.where(input_sent==eos_index)[0]
+    if len(first_eos_indices) != 0:
+        # Remove <eos> and characters after that
+        input_sent = input_sent[:first_eos_indices.min()]
+    input_sent = input_sent[np.where(input_sent != sos_index)[0]]
+    # Remove the remaining ignore tokens
+    input_sent = input_sent[np.where(input_sent != ignore_token_index)[0]]
+    return input_sent
