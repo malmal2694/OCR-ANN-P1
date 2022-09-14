@@ -1,10 +1,12 @@
 from torchvision.transforms import Compose
-from .dataset import CodingString, ToTensor, Normalize
+from .dataset import ToTensor, Normalize
+from .utils import CodingString
 from random import randint
 import glob
 from os import path
 from torch import device
 from torch.cuda import is_available
+
 
 unique_chars_map_file = path.join(
     path.abspath(path.dirname(__file__)), 

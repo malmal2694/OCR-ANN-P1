@@ -3,10 +3,89 @@ from bidi.algorithm import get_display
 import arabic_reshaper
 import matplotlib.pyplot as plt
 from torch import Tensor
-from numpy import ndarray
 from typing import Union
+import numpy as np
 
 
+class CodingString:
+    """
+    Map the characters of a string to corresponding ints and return it as a list.
+    (This is a transformer)
+    """
+
+    def __init__(self, map_char_file:str, used_in_train=True):
+        """
+        Parameters
+        ----------
+        map_char_file (str): The path of the file that map chars to ints
+        used_in_train (bool): Set it true for the training and false for the testing 
+        and evaluation steps.
+        """
+        with open(map_char_file, "r") as f:
+            uniq_file = f.readlines()
+        self.used_in_train = used_in_train
+        # Create a dict that maps unique chars to ints
+        self.char_to_int_map = {}
+        for line in uniq_file:
+            self.char_to_int_map[line[0]] = int(line[2:5])
+        # vocab_size is the number of unique chars plus one that represent blank char.
+        # Refer to CTC loss algorithm.
+        self.vocab_size = len(self.char_to_int_map)  # + 1
+
+    def __call__(self, input:dict) -> Union[dict, np.ndarray]:
+        """
+        Map the string to a numpy array of ints and then retrurn this array.
+
+        Parameters
+        ----------
+        input (dict): If ``used_in_train`` equals True, the ``input`` is a dict and we 
+        encode its ``gt`` key and return the whole input (with encoded ``gt``). 
+        else ``input`` is a string and we encode it and return it in a numpy format.
+        """
+        txt_out = np.array([], dtype=int)
+        if self.used_in_train:
+            for char in input["gt"]:
+                txt_out = np.append(txt_out, self.char_to_int_map[char])
+            input["gt"] = txt_out
+            return input
+        else:
+            for char in input:
+                txt_out = np.append(txt_out, self.char_to_int_map[char])
+            return txt_out
+    
+class DecodeString:
+    """
+    Decode the encoded string
+    """
+    def __init__(self, map_char_file):
+        """
+        map_char_file: The path of the file that map chars to ints
+        """
+        with open(map_char_file, "r") as f:
+            uniq_file = f.readlines()
+        # Create a dict that maps unique chars to ints
+        self.int_to_char_map = {}
+        for line in uniq_file:
+            self.int_to_char_map[int(line[2:5])] = line[0]
+        # vocab_size is the number of unique chars plus one that represent blank char.
+        # Refer to CTC loss algorithm.
+        self.vocab_size = len(self.int_to_char_map)  # + 1
+
+    def __call__(self, encoded_gt:Union[Tensor, np.ndarray]) -> str:
+        """
+        Map the encoded string to a decoded string and then return it.
+
+        Parameters
+        ----------
+        encoded_str (str): the encoded string we want to decode it.
+        """
+        txt_out = ""
+        for coded_char in encoded_gt:
+            if coded_char != 0: # coded_char wasn't blank character(defined in CTC class)
+                # coded_char is tensor type, then we convert it to int
+                txt_out += self.int_to_char_map[int(coded_char)]
+        return txt_out
+    
 def random_from_list(input_list):
     """
     Select one element from the input_list as random and return it.
@@ -77,36 +156,3 @@ def create_char_to_int_map_file(unique_char_file, map_file):
         for index, line in enumerate(uniq_file, start=1):
             # Split the unique characters and assign to them an unique numberand save them
             f.write(f"{line[0]}#{format(index, '03d')}\n")
-    
-class DecodeString:
-    """
-    Decode the encoded string
-    """
-    def __init__(self, map_char_file):
-        """
-        map_char_file: The path of the file that map chars to ints
-        """
-        with open(map_char_file, "r") as f:
-            uniq_file = f.readlines()
-        # Create a dict that maps unique chars to ints
-        self.int_to_char_map = {}
-        for line in uniq_file:
-            self.int_to_char_map[int(line[2:5])] = line[0]
-        # vocab_size is the number of unique chars plus one that represent blank char.
-        # Refer to CTC loss algorithm.
-        self.vocab_size = len(self.int_to_char_map)  # + 1
-
-    def __call__(self, encoded_gt:Union[Tensor, ndarray]) -> str:
-        """
-        Map the encoded string to a decoded string and then return it.
-
-        Parameters
-        ----------
-        encoded_str (str): the encoded string we want to decode it.
-        """
-        txt_out = ""
-        for coded_char in encoded_gt:
-            if coded_char != 0: # coded_char wasn't blank character(defined in CTC class)
-                # coded_char is tensor type, then we convert it to int
-                txt_out += self.int_to_char_map[int(coded_char)]
-        return txt_out

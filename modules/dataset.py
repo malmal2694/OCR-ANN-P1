@@ -36,42 +36,6 @@ class OCRDataset(Dataset):
 
         return pair
 
-
-class CodingString:
-    """
-    Map the characters of a string to corresponding ints and return it as a list.
-    (This is a transformer)
-    """
-
-    def __init__(self, map_char_file):
-        """
-        map_char_file: The path of the file that map chars to ints
-        """
-        with open(map_char_file, "r") as f:
-            uniq_file = f.readlines()
-        # Create a dict that maps unique chars to ints
-        self.char_to_int_map = {}
-        for line in uniq_file:
-            self.char_to_int_map[line[0]] = int(line[2:5])
-        # vocab_size is the number of unique chars plus one that represent blank char.
-        # Refer to CTC loss algorithm.
-        self.vocab_size = len(self.char_to_int_map)  # + 1
-
-    def __call__(self, sample):
-        """
-        Map the string to a numpy array of ints and then retrurn this array.
-
-        Parameters
-        ----------
-        sample(dict): the sample we want to map its ground truth(as a tensor object)
-        to int and then return the whole sample.
-        """
-        txt_out = np.array([], dtype=int)
-        for char in sample["gt"]:
-            txt_out = np.append(txt_out, self.char_to_int_map[char])
-        sample["gt"] = txt_out
-        return sample
-
 class Normalize:
     """
     Rescale value of pixels to have value between 0 and 1 and then rescale again

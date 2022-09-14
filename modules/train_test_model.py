@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import nn
 from os import path
 from pathlib import Path
-from .utils import DecodeString, load_char_map_file
+from .utils import DecodeString, load_char_map_file, CodingString
 from fast_ctc_decode import viterbi_search
 import numpy as np
 
@@ -151,9 +151,10 @@ class TestModel:
         self.model = model(params).to(self.device)
         self.decode_string = DecodeString(map_char_file)
         self.params = params
-        
+        self.encode = CodingString(map_char_file, used_in_train=False)
+
     @torch.no_grad()
-    def __call__(self, imgs:torch.Tensor) -> list:
+    def __call__(self, imgs:torch.Tensor):
         """
         Parameters
         ----------
@@ -163,24 +164,26 @@ class TestModel:
         
         Returns
         -------
-        A list with two indices. First index contains a list of strings(decoded) 
-        created by the model (e.g., ["hello", "hi"]). The second index contains 
+        First return contains a list of strings(decoded) 
+        created by the model (e.g., ["hello", "hi"]). The second return contains 
         list of encoded texts produced by the model (e.g., [[1, 20, 3], [66, 5, 2]]).
         """
         # Predicted gts returned from the model
         pred_gts = self.model(imgs.to(self.device))
         alphabet = "".join(load_char_map_file(self.map_char_file).keys())
-        # Replace blank character with a desired character(we use character "a")
+        # Add a character is not used in the alphabet to represent the blank 
+        # character. (we suppose the index of blank characters is zero) We use an
+        # emoji. There's no need to delete this character; it will automatically remove.
         # Also we suppose the index of blank character is zero
-        alphabet = "a" + alphabet
+        alphabet = "🐱" + alphabet
         decoded_out_sents = []
         encoded_out_sents = []
         for sent in pred_gts:
             seq, path = viterbi_search(sent.permute(1, 0).numpy().astype(np.float32), alphabet)
             # decoded_out_sent.append(self.decode_string(pred_gt[0]))
-            decoded_out_sents.append(seq.replace("a", ""))
-            encoded_out_sents.append()
-        return decoded_out_sents, path
+            decoded_out_sents.append(seq)
+            encoded_out_sents.append(self.encode())
+        return decoded_out_sents, encoded_out_sents
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
         """
