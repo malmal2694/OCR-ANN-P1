@@ -174,10 +174,12 @@ class TestModel:
         # Also we suppose the index of blank character is zero
         alphabet = "a" + alphabet
         decoded_out_sents = []
+        encoded_out_sents = []
         for sent in pred_gts:
             seq, path = viterbi_search(sent.permute(1, 0).numpy().astype(np.float32), alphabet)
             # decoded_out_sent.append(self.decode_string(pred_gt[0]))
             decoded_out_sents.append(seq.replace("a", ""))
+            encoded_out_sents.append()
         return decoded_out_sents, path
 
     def load_checkpoint(self, checkpoint_path:str) -> None:
