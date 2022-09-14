@@ -154,7 +154,7 @@ class TestModel:
         self.encode = CodingString(map_char_file, used_in_train=False)
 
     @torch.no_grad()
-    def convert_img2text(self, imgs:torch.Tensor) -> tuple[list, list]:
+    def convert_img2text(self, imgs:torch.Tensor) -> tuple:
         """
         Parameters
         ----------
@@ -164,7 +164,7 @@ class TestModel:
         
         Returns
         -------
-        First return contains a list of strings(decoded) 
+        A tuple with two list. First return contains a list of strings(decoded) 
         created by the model (e.g., ["hello", "hi"]). The second return contains 
         list of encoded texts produced by the model (e.g., [[1, 20, 3], [66, 5, 2]]).
         """
