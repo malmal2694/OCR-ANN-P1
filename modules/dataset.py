@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 from torchvision.transforms.functional import resize
 import numpy as np
 from .create_pairs import CreateImgGtPair
+from typing import Union
 
 
 class OCRDataset(Dataset):
@@ -60,14 +61,12 @@ class Normalize:
 class ToTensor:
     """
     Convert given samples to Tensors.
-    More acurately, convert the image and gt to tensor. (This is a transformer)
+    More acurately, convert the image and gt to tensor. Also swap color axis of 
+    the image because first saxis of the image should represent hcannels of the 
+    image(This is a transformer)
     """
 
     def __call__(self, sample):
-        # swap color axis because
-        # numpy image: H x W x C
-        # torch image: C x H x W
-        sample["img"] = sample["img"].transpose((2, 0, 1))
         return {
             "img": torch.from_numpy(sample["img"]),
             "gt": torch.from_numpy(sample["gt"]),
@@ -92,6 +91,59 @@ class Resize:
         sample["img"] = resize(sample["img"], self.size)
         return sample
 
+class AdjustImageChannels:
+    """
+    Check to all images have three channels. If an input image has one channel, 
+    return an image with three channel such that the first channel of output equals 
+    to the input and the two oter channels be zero.
+    (This is a transformer)
+    """
+    def __init__(self, used_in_train=True, swap_img_axis=True):
+        """
+        Parameters
+        ----------
+        used_in_transformer (bool): When training it should be true and when 
+        evaluating and testing this parameter should be false.
+        swap_img_axis (bool): Input image to the model should have this shape: 
+        ``[C x H x W]``. (``C``: Number of channels of the image, ``H``: Height 
+        of the image, ``W``: Width of the image). If his be true, swap image shape 
+        from ``(H x W x C)`` to ``(C x H x W)``.
+        """
+        self.swap_img_axis = swap_img_axis
+        self.used_in_train = used_in_train
+        
+    def __call__(self, sample: Union[dict, torch.Tensor]) -> dict:
+        """
+        Parameters
+        ----------
+        sample: Should be a dict or an image. (Not a batch of images). Note that 
+        first axis of the image should be channels of image. image should has three dimensions.
+        
+        Returns
+        -------
+        Returned image is in the form ``(C x H x W)``.
+        """
+        if self.used_in_train:
+            # swap color axis because
+            # numpy image: H x W x C
+            # torch image: C x H x W
+            if self.swap_img_axis:
+                sample["img"] = sample["img"].permute(2, 0, 1)
+            shape = sample["img"].shape
+            if shape[0] == 1:
+                temp = torch.zeros(3, shape[1], shape[2])
+                temp[0] = sample["img"]
+                sample["img"] = temp
+        else:
+            if self.swap_img_axis:
+                sample = sample.permute(2, 0, 1)
+            shape = sample.shape
+            if shape[0] == 1:
+                temp = torch.zeros(3, shape[1], shape[2])
+                temp[0] = sample
+                sample = temp
+        return sample
+    
 def dataloader_collate_fn(batch):
     """
     Merge a list of samples(batch) such that every ground truth in the samples

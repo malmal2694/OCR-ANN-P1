@@ -3,6 +3,7 @@ from PIL import Image, ImageFont, ImageDraw, ImageChops, ImageMorph, ImageEnhanc
 from os import path
 from modules.utils import random_from_list
 from numpy import array, float32
+from random import randint
 
 
 class CreateImgGtPair:
@@ -22,7 +23,8 @@ class CreateImgGtPair:
         """
         Create a img/gt pair with random noise, morphology parameter, length,
         font size, font, and text.
-        Note: Returned image is converted to a Numpy.flaot32 array.
+        Note: Returned image is converted to a Numpy.flaot32 array. First dimension 
+        of the image is height, second is width, and third represents the channels of the image.
 
         Returns
         -------
@@ -42,7 +44,8 @@ class CreateImgGtPair:
         bbox = font.getbbox(gt, direction="rtl")
         width_txt = bbox[2] - bbox[0]
         height_txt = bbox[3] - bbox[1]
-        background_img = Image.open(random_from_list(self.params["background_list"]))
+        background_img_path = random_from_list(self.params["background_list"])
+        background_img = (Image.open(background_img_path) if background_img_path != "" else "")
 
         # Create image of text with a background image
         image = Image.new(
@@ -59,11 +62,17 @@ class CreateImgGtPair:
             morph_op = ImageMorph.MorphOp(lut)  # Morphology operation
             _, image = morph_op.apply(image)
 
-        image = ImageChops.multiply(image.convert("RGB"), background_img)
+        if background_img != "":
+            image = ImageChops.multiply(image.convert("RGB"), background_img)
         brightness_image = ImageEnhance.Brightness(image)
-        brightnenss_value = self.params["brightness"]
+        brightnenss_value = randint(self.params["brightness"][0], self.params["brightness"][1]) / 100
         image = brightness_image.enhance(brightnenss_value)
         image = array(image, dtype=float32)  # Convert PIL image to the Numpy.flaot32 array
         details = f"""fontname: {path.split(font_path)[1]}, fontsize: {font_size}, 
 morphology: {morph_type}, brightness: {brightnenss_value}"""
+        # Check if image has two dimensional, add an additional dimension to represent channels of the image
+        shape = image.shape
+        if len(shape) == 2:
+            image = image.reshape(shape[0], shape[1], 1)
+            
         return (image, gt, details)

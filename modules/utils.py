@@ -145,17 +145,21 @@ def show_imgs(imgs, gts, details, permute=False):
         else:
             raise ValueError("The imgs list is empty")
 
-def create_char_to_int_map_file(unique_char_file, map_file):
+def create_char_to_int_map_file(unique_chars:list, map_file_path:str, start_index=1):
     """
-    Create a map file(i.e., a file contains unique chars and their corresponding
-    integer) from file contain uniqie characters.
+    Create a ``map_file`` file(i.e., a file contains unique chars and their corresponding
+    integer) and map ``unique_chars`` to integers with start index equals ``start_index``
+    
+    Parameters
+    ----------
+    unique_chars (list): List of unique characters we want to map to integer.
+    map_file_path (str): Name of file we want save the mapping there.
+    start_index (int): The index  we start from.
     """
-    with open(unique_char_file, "r") as f:
-        uniq_file = f.readlines()
-    with open(map_file, "w") as f:
-        for index, line in enumerate(uniq_file, start=1):
+    with open(map_file_path, "w") as f:
+        for index, char in enumerate(unique_chars, start_index):
             # Split the unique characters and assign to them an unique numberand save them
-            f.write(f"{line[0]}#{format(index, '03d')}\n")
+            f.write(f"{char[0]}#{format(index, '03d')}\n")
 
 def clean_sentence(input_sent:np.ndarray, sos_index:int, eos_index:int, ignore_token_index=0) -> np.ndarray:
     """
@@ -164,8 +168,8 @@ def clean_sentence(input_sent:np.ndarray, sos_index:int, eos_index:int, ignore_t
     
     Parameters
     ----------
-    input_sent (np.ndarray): Input sentence that is a vector with the length of ``input_Sent``.
-    ``input_sent`` should be encoded string.
+    input_sent (np.ndarray): Input sentence that is a vector with the length of ``input_sent``.
+    ``input_sent`` should be an encoded string.
     """
     first_eos_indices = np.where(input_sent==eos_index)[0]
     if len(first_eos_indices) != 0:
@@ -175,3 +179,19 @@ def clean_sentence(input_sent:np.ndarray, sos_index:int, eos_index:int, ignore_t
     # Remove the remaining ignore tokens
     input_sent = input_sent[np.where(input_sent != ignore_token_index)[0]]
     return input_sent
+
+def load_char_map_file(path:str)->dict:
+    """
+    Load a map between characters and numbers.
+    
+    Returns
+    -------
+    A dict maps chars to int.
+    """
+    with open(path, "r") as f:
+        file = f.readlines()
+    # Create a dict that maps unique chars to ints
+    char_to_int_map = {}
+    for line in file:
+        char_to_int_map[line[0]] = int(line[2:5])
+    return char_to_int_map
