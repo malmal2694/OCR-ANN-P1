@@ -6,13 +6,15 @@ import torch.nn.functional as F
 from torch import nn
 from os import path
 from pathlib import Path
-from .utils import DecodeString, load_char_map_file, CodingString
+from .utils import DecodeString, load_char_map_file, CodingString, clean_sentence
 from fast_ctc_decode import viterbi_search
 import numpy as np
+from .statistic import word_error_rate, char_error_rate
+from typing import Tuple
 
 
 class TrainModel:
-    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, lr=None) -> None:
+    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, test_step:int) -> None:
         """
         model: Name of model to train
         
@@ -22,13 +24,13 @@ class TrainModel:
         save_check_step (int): Save a new checkpoint at each "save_check_Step" epoch
         lr (int): If it doesn't set, use the learning rate specified in the parameters dictionary
         """
-        self.device = params["training_params"]["device"]
+        self.device = params["training"]["device"]
         self.model = model(params).to(self.device)
         self.dataset = dataset(params)
         self.params = params
         self.dataloader = DataLoader(
             self.dataset,
-            batch_size = params["training_params"]["batch_size"],
+            batch_size = params["training"]["batch_size"],
             shuffle=True,
             collate_fn=dataloader_collate_fn,
         )
@@ -36,12 +38,20 @@ class TrainModel:
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
         self.last_epoch_index = 0
-        self.lr = self.params["training_params"]["min_opt_lr"] if lr == None else lr
+        self.lr = self.params["training"]["min_opt_lr"]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
-        self.max_epoch = self.params["training_params"]["epoch_numbers"]
-        self.checkpoint_dir = self.params["training_params"]["checkpoint_dir"]
+        self.max_epoch = self.params["training"]["epoch_numbers"]
+        self.checkpoint_dir = self.params["training"]["checkpoint_dir"]
         self.save_check_step = save_check_step
-        self.test_model = TestModel(self.model, self.device, self.params["unique_chars_map_file"])
+        self.map_char_file = params["dataset"]["unique_chars_map_file"]
+        self.alphabet = "".join(load_char_map_file(self.map_char_file).keys())
+        self.decode_gt = DecodeString(self.map_char_file)
+        # Store statistics during the training.
+        # The statistics are CER and WER
+        self.statistics = {}
+        self.whitespace_index = params["dataset"]["whitespace_char_index"]
+        self.test_step = test_step
+        self.testing_batch_count = params["training"]["testing_batch_count"]
         
     def fit(self, debug_mode=False):
         """
@@ -53,7 +63,7 @@ class TrainModel:
         """
         torch.autograd.set_detect_anomaly(True)
             
-        for epoch in range(self.last_epoch_index, self.max_epoch):
+        for epoch_index in range(self.last_epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
                 # Send image and gt batch to the device that is specified.
@@ -81,15 +91,21 @@ class TrainModel:
 
                 running_loss += loss.item()
                 if i % self.show_log_step == 0:
-                    print(f"Iteration {i} of epoch {epoch}) loss: {(running_loss / self.show_log_step):.5f}")
+                    print(f"Iteration {i} of epoch {epoch_index}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
-                    # Create a test set and a prediction for this set
-                    test_set = self.dataset[0]
-                    self.test_model(test_set["gt"], test_set["img"].unsqueeze(0))
-                    
-            if epoch % self.save_check_step == 0:
-                out = self.save_checkpoint(epoch)
-                print(f"Iteration {i} of epoch {epoch}) Checkpoint saved. checkpoint path: {out}")
+            
+            if epoch_index % self.test_step == 0:
+                result = self.test(self.testing_batch_count)
+                print(
+                    f"CER value: {result[0]:.5f}, WER value: {result[1]:.5f}, Epoch: {epoch_index}"
+                )
+                print(f"Ground truth sentence(target): {result[2][1]}")
+                print(f"OCRed (predicted) sentence: {result[2][0]}")
+                self.statistics[epoch_index] = {"cer": result[0], "wer": result[1]}
+               
+            if epoch_index % self.save_check_step == 0:
+                out = self.save_checkpoint(epoch_index)
+                print(f"Iteration {i} of epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}")
                 
     def load_checkpoint(self, file_name:str) -> None:
         """
@@ -105,6 +121,7 @@ class TrainModel:
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
+        self.statistics = checkpoint["statistics"]
 
     def save_checkpoint(self, index:int) -> str:
         """
@@ -117,7 +134,7 @@ class TrainModel:
         -------
         Path and name of the file that created
         """
-        file_name = self.params["training_params"]["checkpoint_name"]
+        file_name = self.params["training"]["checkpoint_name"]
         hash_count = file_name.count("#")
         file_name = file_name.replace(hash_count * "#", format(index, f"0{hash_count}d"))
         file_path = path.join(self.checkpoint_dir, file_name)
@@ -128,11 +145,58 @@ class TrainModel:
             "last_epoch_index": index,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
-            "loss_state_dict": self.loss_fn.state_dict()
+            "loss_state_dict": self.loss_fn.state_dict(),
+            "statistics": self.statistics,
         }, file_path)
-        
         return file_path
 
+    @torch.no_grad()
+    def test(self, batch_count=1) -> Tuple[float, float, list]:
+        """
+        Select ``batch_count`` batches from the test set and calculate WER and CER
+        of the batches and return it. Also print a sample of target/predicted pair.
+
+        Parameters
+        ----------
+        batch_count (int): Number of batches to calculate WER and CER of the model.
+
+        Returns
+        -------
+        A tuple such that first element is CER value, second element is WER value,
+        and the third element is a list as the form [OCRed sentence, target ground truth]. 
+        Note that all sentence are decoded. (i.e., they are string)
+        """
+        wer = 0
+        cer = 0
+        sent_numbers = 0
+        # First index contains OCRed sentence(sentence predicted by the model), 
+        # second index is target ground truth.
+        sample = list()
+        for i in range(batch_count):
+            batch = next(iter(self.dataloader))
+            output = self.model(batch["img"].to(self.device))
+            # Select one sample pair to print to the user
+            if i == 0:
+                sample.append(viterbi_search(output[0].permute(1, 0).cpu().numpy().astype(np.float32), self.alphabet))
+                sample.append(self.decode_gt(batch["gt"][0]))
+                sent_numbers = len(batch) * batch_count
+
+            for out_sent, valid_sent in zip(output, batch["valid"].cpu().numpy()):
+                out_sent = clean_sentence(out_sent, 200, 201, 0)
+                valid_sent = clean_sentence(valid_sent, 200, 201, 0)
+                cer += char_error_rate(out_sent, valid_sent)
+                wer += word_error_rate(out_sent, valid_sent, self.whitespace_index)
+        cer = cer / sent_numbers
+        wer = wer / sent_numbers
+        sample = [self.decode_string(sent) for sent in sample]
+        return (cer, wer, sample)
+    
+    def get_statistics(self) -> dict:
+        """
+        Returns all of the stored statistics of the model.
+        """
+        return self.statistics
+    
 class TestModel:
     """
     Test the given model
@@ -146,12 +210,12 @@ class TestModel:
         device: The device the model is on
         map_char_file (str): Address of the file maps int to char
         """
-        self.map_char_file = map_char_file
-        self.device = params["training_params"]["device"]
+        self.device = params["training"]["device"]
         self.model = model(params).to(self.device)
         self.decode_string = DecodeString(map_char_file)
         self.params = params
         self.encode = CodingString(map_char_file, used_in_train=False)
+        self.alphabet = "".join(load_char_map_file(map_char_file).keys())
 
     @torch.no_grad()
     def convert_img2text(self, imgs:torch.Tensor) -> tuple:
@@ -170,7 +234,7 @@ class TestModel:
         """
         # Predicted gts returned from the model
         pred_gts = self.model(imgs.to(self.device))
-        alphabet = "".join(load_char_map_file(self.map_char_file).keys())
+        
         # Add a character is not used in the alphabet to represent the blank 
         # character. (we suppose the index of blank characters is zero) We use an
         # emoji. There's no need to delete this character; it will automatically remove.

@@ -1,9 +1,24 @@
-from torch.nn import Module, ModuleList
+from torch.nn import Module, ModuleList, Sequential
 from torch.nn import Conv2d, InstanceNorm2d, Dropout, Dropout2d
-from torch.nn import ReLU
-from torch.nn.functional import pad
+from torch.nn import ReLU, AdaptiveMaxPool2d
+from torch.nn.functional import pad, log_softmax
 import random
+import torch
 
+
+class LineRecognition(Module):
+    def __init__(self, params):
+        super().__init__()
+        self.model = Sequential(
+            FCN_Encoder(params), LineDecoder(params)
+        )
+
+    def forward(self, sample):
+        """
+        Forward the images not the image/gt pairs
+        Return predicted gt for given img
+        """
+        return self.model(sample)
 
 class DepthSepConv2D(Module):
     def __init__(
@@ -192,3 +207,20 @@ class DSCBlock(Module):
         if pos == 3:
             x = self.dropout(x)
         return x
+    
+class LineDecoder(Module):
+    def __init__(self, params):
+        super().__init__()
+
+        self.vocab_size = params["training"]["vocab_size"]
+
+        self.ada_pool = AdaptiveMaxPool2d((1, None))
+        self.end_conv = Conv2d(
+            in_channels=256, out_channels=self.vocab_size + 1, kernel_size=(1, 1)
+        )
+
+    def forward(self, x):
+        x = self.ada_pool(x)
+        x = self.end_conv(x)
+        x = torch.squeeze(x, dim=2)
+        return log_softmax(x, dim=1)
