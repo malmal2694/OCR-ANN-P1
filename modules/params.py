@@ -1,5 +1,5 @@
 from torchvision.transforms import Compose
-from .dataset import ToTensor, Normalize
+from .dataset import ToTensor, Normalize, AdjustImageChannels
 from .utils import CodingString
 from random import randint
 import glob
@@ -14,10 +14,14 @@ unique_chars_map_file = path.join(
 )
 
 params = {
-    "unique_chars_map_file": path.join(
-        path.abspath(path.dirname(__file__)), 
-        "../create-data/unique_chars_map.txt"
-    ),
+    "dataset": {
+        "unique_chars_map_file": path.join(
+            path.abspath(path.dirname(__file__)), 
+            "../create-data/unique_chars_map.txt"    
+        ),
+        # Index of the whitespace(The character that is between words of sentence).
+        "whitespace_char_index": 1,
+    },
     "artificial_dataset": {
         "fontlist": glob.glob(
             path.join(path.dirname(__file__), 
@@ -25,22 +29,18 @@ params = {
         ),  # List fonts
         "morphology_types": [
             # ["4:(111 ..1 111)->1"],
-            ["4:(.00 ..0 .1.)->0"],
-            # ["0:(111 ..0 0..)->1"],
-            # [
-            #     "4:(1.0 111 000)->0",
-            #     "4:(.0. .1. ...)->1",
-            #     "4:(01. .1. ...)->1",
-            # ],
-            [], [], [], [],
+            # ["4:(.00 ..0 .1.)->0"],
             [],
         ],
-        "gt_length_interval": [1, 2],
+        # number of word in each line is in the interval
+        "gt_length_interval": [4, 22],
         # List of images for background
-        "background_list": glob.glob(
-            path.join(path.dirname(__file__), "../create-data/backgrounds/*")
-        ),
-        "brightness": randint(70, 130) / 100,  # Brightness of the image
+        "background_list": [""],
+        # "background_list": glob.glob(
+        #     path.join(path.dirname(__file__), "../create-data/backgrounds/*")
+        # ),
+        # Iinterval of Brightness of the image (It will divided to 100)
+        "brightness": (70, 130),
         # The number of images. Because we don't have a real dataset of image/gt
         # pairs also image/gt pairs create online, the value of this parameter
         # is desirable, but it's better for this value to be large.
@@ -54,26 +54,22 @@ params = {
         ),
     },
     "model_params": {
-        # Model classes to use for each module
-        # "models": {
-        #     "encoder": FCN_Encoder,
-        #     "decoder": Decoder,
-        # },
         "transfer_learning": None,  # dict : {model_name: [state_dict_name, checkpoint_path, learnable, strict], }
         "input_channels": 3,  # 1 for grayscale images, 3 for RGB ones (or grayscale as RGB)
         "dropout": 0.5,  # dropout probability for standard dropout (half dropout probability is taken for spatial dropout)
     },
-    # List of transforms that apply on the image
-    "training_params": {
+    # List of transforms that apply on the image/gt pair
+    "training": {
         "transforms": Compose(
             [
                 CodingString(unique_chars_map_file),
                 ToTensor(),
-                # Resize((200, 2000)),
                 Normalize(),
+                AdjustImageChannels(),
             ]
         ),
-        "vocab_size": 109,  # Note that acount space character too.
+        # Note that acount space character too. There's no need to add blank character to these chars.
+        "vocab_size": 91,
         "min_opt_lr": 0.0004,  # Minimum learning rate we can reach
         "max_opt_lr": 0.005, # Maximum learning rate we can reach
         "epoch_numbers": 2000, # Maximum number of epoches
@@ -91,9 +87,11 @@ params = {
         "interval_save_weights": None,  # None: keep best and last only
         "use_ddp": False,  # Use DistributedDataParallel
         "use_apex": True,  # Enable mix-precision with apex package
-        # Use GPU is available else use gpu
+        # Use GPU if available else CPU
         "device": device("cuda:0" if is_available() else "cpu"),
         "batch_size": 16,  # mini-batch size per GPU
+        # Number of batches to use in testing the model
+        "testing_batch_count": 10,
         "optimizer": {
             # "class": Adam,
             "args": {
