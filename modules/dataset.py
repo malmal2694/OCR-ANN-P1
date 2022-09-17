@@ -37,19 +37,21 @@ class OCRDataset(Dataset):
 
         return pair
 
+
 class Normalize:
     """
     Rescale value of pixels to have value between 0 and 1 and then rescale again
     to pixels have value between -1 and +1.
     (This is a transformer)
     """
+
     def __init__(self, used_in_train=True):
         """
-        used_in_transformer (bool): when training it should be true and when 
+        used_in_transformer (bool): when training it should be true and when
         evaluating and testing this parameter should be false.
         """
         self.used_in_train = used_in_train
-        
+
     def __call__(self, sample):
         if self.used_in_train == True:
             sample["img"] = ((sample["img"] / 255) - 0.5) / 0.5
@@ -61,8 +63,8 @@ class Normalize:
 class ToTensor:
     """
     Convert given samples to Tensors.
-    More acurately, convert the image and gt to tensor. Also swap color axis of 
-    the image because first saxis of the image should represent hcannels of the 
+    More acurately, convert the image and gt to tensor. Also swap color axis of
+    the image because first saxis of the image should represent hcannels of the
     image(This is a transformer)
     """
 
@@ -91,34 +93,36 @@ class Resize:
         sample["img"] = resize(sample["img"], self.size)
         return sample
 
+
 class AdjustImageChannels:
     """
-    Check to all images have three channels. If an input image has one channel, 
-    return an image with three channel such that the first channel of output equals 
+    Check to all images have three channels. If an input image has one channel,
+    return an image with three channel such that the first channel of output equals
     to the input and the two oter channels be zero.
     (This is a transformer)
     """
+
     def __init__(self, used_in_train=True, swap_img_axis=True):
         """
         Parameters
         ----------
-        used_in_transformer (bool): When training it should be true and when 
+        used_in_transformer (bool): When training it should be true and when
         evaluating and testing this parameter should be false.
-        swap_img_axis (bool): Input image to the model should have this shape: 
-        ``[C x H x W]``. (``C``: Number of channels of the image, ``H``: Height 
-        of the image, ``W``: Width of the image). If his be true, swap image shape 
+        swap_img_axis (bool): Input image to the model should have this shape:
+        ``[C x H x W]``. (``C``: Number of channels of the image, ``H``: Height
+        of the image, ``W``: Width of the image). If his be true, swap image shape
         from ``(H x W x C)`` to ``(C x H x W)``.
         """
         self.swap_img_axis = swap_img_axis
         self.used_in_train = used_in_train
-        
+
     def __call__(self, sample: Union[dict, torch.Tensor]) -> dict:
         """
         Parameters
         ----------
-        sample: Should be a dict or an image. (Not a batch of images). Note that 
+        sample: Should be a dict or an image. (Not a batch of images). Note that
         first axis of the image should be channels of image. image should has three dimensions.
-        
+
         Returns
         -------
         Returned image is in the form ``(C x H x W)``.
@@ -143,7 +147,8 @@ class AdjustImageChannels:
                 temp[0] = sample
                 sample = temp
         return sample
-    
+
+
 def dataloader_collate_fn(batch):
     """
     Merge a list of samples(batch) such that every ground truth in the samples
@@ -158,5 +163,7 @@ def dataloader_collate_fn(batch):
 
     longest_height = max(data["img"].shape[1] for data in batch)
     longest_width = max(data["img"].shape[2] for data in batch)
-    imgs = torch.stack([resize(data["img"], (longest_height, longest_width)) for data in batch], dim=0)
+    imgs = torch.stack(
+        [resize(data["img"], (longest_height, longest_width)) for data in batch], dim=0
+    )
     return {"gt": gts, "img": imgs}

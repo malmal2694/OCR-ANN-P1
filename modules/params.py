@@ -9,23 +9,20 @@ from torch.cuda import is_available
 
 
 unique_chars_map_file = path.join(
-    path.abspath(path.dirname(__file__)), 
-    "../create-data/unique_chars_map.txt"
+    path.abspath(path.dirname(__file__)), "../create-data/unique_chars_map.txt"
 )
 
 params = {
     "dataset": {
         "unique_chars_map_file": path.join(
-            path.abspath(path.dirname(__file__)), 
-            "../create-data/unique_chars_map.txt"    
+            path.abspath(path.dirname(__file__)), "../create-data/unique_chars_map.txt"
         ),
         # Index of the whitespace(The character that is between words of sentence).
         "whitespace_char_index": 1,
     },
     "artificial_dataset": {
         "fontlist": glob.glob(
-            path.join(path.dirname(__file__), 
-            ("../create-data/fonts/*"))
+            path.join(path.dirname(__file__), ("../create-data/fonts/*"))
         ),  # List fonts
         "morphology_types": [
             # ["4:(111 ..1 111)->1"],
@@ -49,8 +46,7 @@ params = {
         # directory and the words selected from this file. Note that in the wordlist,
         # each word should be placed in a separate line.
         "wordlist_path": path.join(
-            path.abspath(path.dirname(__file__)), 
-            "../create-data/complete.wordlist"
+            path.abspath(path.dirname(__file__)), "../create-data/complete.wordlist"
         ),
     },
     "model_params": {
@@ -71,26 +67,25 @@ params = {
         # Note that acount space character too. There's no need to add blank character to these chars.
         "vocab_size": 91,
         # Parameters of optimizer and lr scheduler
-        "lr":{
+        "lr": {
             # The learning rate we start with this value
             "start_lr": 0.005,
             # Factor by which the learning rate will be reduced. new_lr = lr * factor.
             "factor": 0.1,
-            # Number of epochs with no improvement after which learning rate will be reduced. 
-            # For example, if patience = 2, then we will ignore the first 2 epochs with no 
-            # improvement, and will only decrease the LR after the 3rd epoch if the loss 
+            # Number of epochs with no improvement after which learning rate will be reduced.
+            # For example, if patience = 2, then we will ignore the first 2 epochs with no
+            # improvement, and will only decrease the LR after the 3rd epoch if the loss
             # still hasn’t improved then.
             "patience": 5,
-            # Threshold for measuring the new optimum, to only focus on significant changes. 
+            # Threshold for measuring the new optimum, to only focus on significant changes.
             "threshold": 5e-3,
         },
-        "epoch_numbers": 2000, # Maximum number of epoches
-        "checkpoint_dir": path.join( # Directory the checkpoint files store and read from
-            path.abspath(path.dirname(__file__)),
-            "../create-data/checkpoints"
+        "epoch_numbers": 2000,  # Maximum number of epoches
+        "checkpoint_dir": path.join(  # Directory the checkpoint files store and read from
+            path.abspath(path.dirname(__file__)), "../create-data/checkpoints"
         ),
-        # Name of the checkpoint file. Instead of the # character, the index of the 
-        # current epoch will replace. The number of the # character shows the 
+        # Name of the checkpoint file. Instead of the # character, the index of the
+        # current epoch will replace. The number of the # character shows the
         # length of the number that will replace.
         "checkpoint_name": "checkpoint-####.pt",
         # "max_nb_epochs": 5000,  # max number of epochs for the training

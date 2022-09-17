@@ -18,10 +18,13 @@ class TrainModel:
     """
     Train the model.
     """
-    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int) -> None:
+
+    def __init__(
+        self, model, dataset, params: dict, show_log_steps: int, save_check_step: int
+    ) -> None:
         """
         model: Name of model to train
-        
+
         Parameters
         ----------
         show_log_step (int): Show log of the model at each "show_log_step" dataloader iteration
@@ -34,7 +37,7 @@ class TrainModel:
         self.params = params
         self.dataloader = DataLoader(
             self.dataset,
-            batch_size = params["training"]["batch_size"],
+            batch_size=params["training"]["batch_size"],
             shuffle=True,
             collate_fn=dataloader_collate_fn,
         )
@@ -55,25 +58,32 @@ class TrainModel:
         self.statistics = {}
         self.whitespace_index = params["dataset"]["whitespace_char_index"]
         self.testing_batch_count = params["training"]["testing_batch_count"]
-        self.lr_scheduler = ReduceLROnPlateau(self.optimizer, "min", factor=params["training"]["lr"]["factor"], patience=params["training"]["lr"]["patience"], verbose=True, threshold=params["training"]["lr"]["threshold"])
+        self.lr_scheduler = ReduceLROnPlateau(
+            self.optimizer,
+            "min",
+            factor=params["training"]["lr"]["factor"],
+            patience=params["training"]["lr"]["patience"],
+            verbose=True,
+            threshold=params["training"]["lr"]["threshold"],
+        )
 
     def fit(self):
         """
         Train the model
-        
+
         Parameters
         ----------
         debug_mode: If true, show more information in training
         """
         torch.autograd.set_detect_anomaly(True)
-            
+
         for epoch_index in range(self.last_epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
-                
+
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
                 # forward + backward + optimize
@@ -90,9 +100,11 @@ class TrainModel:
 
                 running_loss += loss.item()
                 if i % self.show_log_step == 0:
-                    print(f"Iteration {i} of epoch {epoch_index}) loss: {(running_loss / self.show_log_step):.5f}")
+                    print(
+                        f"Iteration {i} of epoch {epoch_index}) loss: {(running_loss / self.show_log_step):.5f}"
+                    )
                     running_loss = 0
-            
+
             # Test the accuracy of the model at the end of each epoch and step the lr value
             result = self.test(self.testing_batch_count)
             print(
@@ -101,54 +113,65 @@ class TrainModel:
             print(f"Ground truth sentence(target): {result[2][1]}")
             print(f"OCRed (predicted) sentence: {result[2][0]}")
             self.statistics[epoch_index] = {"cer": result[0], "wer": result[1]}
-            self.lr_scheduler.step(result[0])   
+            self.lr_scheduler.step(result[0])
 
             if epoch_index % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch_index)
-                print(f"Iteration {i} of epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}")
-                
-    def load_checkpoint(self, file_name:str) -> None:
+                print(
+                    f"Iteration {i} of epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}"
+                )
+
+    def load_checkpoint(self, file_name: str) -> None:
         """
         Load the checkpoint.
         Checkpoints contain, parameters of the model, optimizer, loss value, and index of the last epoch.
-        
+
         Parameters
         ----------
         file_name (str): Name of the file. (e.g., file-name.pt)
         """
-        checkpoint = torch.load(path.join(self.checkpoint_dir, file_name), map_location=self.device)
+        checkpoint = torch.load(
+            path.join(self.checkpoint_dir, file_name), map_location=self.device
+        )
         self.last_epoch_index = checkpoint["lr_scheduler"]["last_epoch"] + 1
         self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
         self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
         self.statistics = checkpoint["statistics"]
 
-    def save_checkpoint(self, index:int) -> str:
+    def save_checkpoint(self, index: int) -> str:
         """
         Parameters
         ----------
-        file_name (str): Name of file to store in the dir_path directory. 
+        file_name (str): Name of file to store in the dir_path directory.
         (e.g., file-name not file-name-cp-10.pt)(cp: check point)
-        
+
         Returns
         -------
         Path and name of the file that created
         """
         file_name = self.params["training"]["checkpoint_name"]
         hash_count = file_name.count("#")
-        file_name = file_name.replace(hash_count * "#", format(index, f"0{hash_count}d"))
+        file_name = file_name.replace(
+            hash_count * "#", format(index, f"0{hash_count}d")
+        )
         file_path = path.join(self.checkpoint_dir, file_name)
         # If file with the same name exist, throw an error
         if Path(file_path).is_file():
-            raise FileExistsError(f"A file  with the same name and path exist.\nFile name: {file_path}")
-        torch.save({
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
-            "loss_state_dict": self.loss_fn.state_dict(),
-            "statistics": self.statistics,
-            "lr_scheduler": self.lr_scheduler,
-        }, file_path)
+            raise FileExistsError(
+                f"A file  with the same name and path exist.\nFile name: {file_path}"
+            )
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "loss_state_dict": self.loss_fn.state_dict(),
+                "statistics": self.statistics,
+                "lr_scheduler": self.lr_scheduler,
+            },
+            file_path,
+        )
         return file_path
 
     @torch.no_grad()
@@ -164,13 +187,13 @@ class TrainModel:
         Returns
         -------
         A tuple such that first element is CER value, second element is WER value,
-        and the third element is a list as the form [OCRed sentence, target ground truth]. 
+        and the third element is a list as the form [OCRed sentence, target ground truth].
         Note that all sentence are decoded. (i.e., they are string)
         """
         wer = 0
         cer = 0
         sent_numbers = 0
-        # First index contains OCRed sentence(sentence predicted by the model), 
+        # First index contains OCRed sentence(sentence predicted by the model),
         # second index is target ground truth.
         sample = list()
         for i in range(batch_count):
@@ -178,7 +201,12 @@ class TrainModel:
             output = self.model(batch["img"].to(self.device))
             # Select one sample pair to print to the user
             if i == 0:
-                sample.append(viterbi_search(output[0].permute(1, 0).cpu().numpy().astype(np.float32), self.alphabet))
+                sample.append(
+                    viterbi_search(
+                        output[0].permute(1, 0).cpu().numpy().astype(np.float32),
+                        self.alphabet,
+                    )
+                )
                 sample.append(self.decode_gt(batch["gt"][0]))
                 sent_numbers = len(batch) * batch_count
 
@@ -191,18 +219,20 @@ class TrainModel:
         wer = wer / sent_numbers
         sample = [self.decode_string(sent) for sent in sample]
         return (cer, wer, sample)
-    
+
     def get_statistics(self) -> dict:
         """
         Returns all of the stored statistics of the model.
         """
         return self.statistics
-    
+
+
 class TestModel:
     """
     Test the given model
     """
-    def __init__(self, params:dict, model, map_char_file:str):
+
+    def __init__(self, params: dict, model, map_char_file: str):
         """
         Parameters
         ----------
@@ -219,24 +249,24 @@ class TestModel:
         self.alphabet = "".join(load_char_map_file(map_char_file).keys())
 
     @torch.no_grad()
-    def convert_img2text(self, imgs:torch.Tensor) -> tuple:
+    def convert_img2text(self, imgs: torch.Tensor) -> tuple:
         """
         Parameters
         ----------
-        img (torch.tensor): Image to convert to text. Note that pixel's value 
+        img (torch.tensor): Image to convert to text. Note that pixel's value
         are in the range of -1 to 1. Note that input should be in the shape (N, C, H, W).
         (N: Size of batch, C: Channels, H: Height, W: Width).
-        
+
         Returns
         -------
-        A tuple with two list. First return contains a list of strings(decoded) 
-        created by the model (e.g., ["hello", "hi"]). The second return contains 
+        A tuple with two list. First return contains a list of strings(decoded)
+        created by the model (e.g., ["hello", "hi"]). The second return contains
         list of encoded texts produced by the model (e.g., [[1, 20, 3], [66, 5, 2]]).
         """
         # Predicted gts returned from the model
         pred_gts = self.model(imgs.to(self.device))
-        
-        # Add a character is not used in the alphabet to represent the blank 
+
+        # Add a character is not used in the alphabet to represent the blank
         # character. (we suppose the index of blank characters is zero) We use an
         # emoji. There's no need to delete this character; it will automatically remove.
         # Also we suppose the index of blank character is zero
@@ -244,16 +274,18 @@ class TestModel:
         decoded_out_sents = []
         encoded_out_sents = []
         for sent in pred_gts:
-            seq, path = viterbi_search(sent.permute(1, 0).cpu().numpy().astype(np.float32), alphabet)
+            seq, path = viterbi_search(
+                sent.permute(1, 0).cpu().numpy().astype(np.float32), alphabet
+            )
             decoded_out_sents.append(seq)
             encoded_out_sents.append(self.encode(seq))
         return decoded_out_sents, encoded_out_sents
 
-    def load_checkpoint(self, checkpoint_path:str) -> None:
+    def load_checkpoint(self, checkpoint_path: str) -> None:
         """
         Load the checkpoint.
         Checkpoints contain parameters of the model, optimizer, loss value, and index of the last epoch.
-        
+
         Parameters
         ----------
         checkpoint_path (str): path of the checkpoint. (e.g., checkpoint/path/file-name.pt)
@@ -261,9 +293,10 @@ class TestModel:
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.model.load_state_dict(checkpoint["model_state_dict"])
 
+
 class CTCLoss(nn.Module):
     """
-    Convenient wrapper for CTCLoss that handles log_softmax and taking 
+    Convenient wrapper for CTCLoss that handles log_softmax and taking
     input/target lengths.
     Source code: https://discuss.pytorch.org/t/best-practices-to-solve-nan-ctc-loss/151913
     """
@@ -301,5 +334,11 @@ class CTCLoss(nn.Module):
         pred_lengths = torch.full(size=(batch,), fill_value=seq_len, dtype=torch.long)
         target_lengths = torch.count_nonzero(targets, axis=1)
 
-        return F.ctc_loss(preds, targets, pred_lengths, target_lengths, blank=self.blank, zero_infinity=True)
-    
+        return F.ctc_loss(
+            preds,
+            targets,
+            pred_lengths,
+            target_lengths,
+            blank=self.blank,
+            zero_infinity=True,
+        )

@@ -9,9 +9,7 @@ import torch
 class LineRecognition(Module):
     def __init__(self, params):
         super().__init__()
-        self.model = Sequential(
-            FCN_Encoder(params), LineDecoder(params)
-        )
+        self.model = Sequential(FCN_Encoder(params), LineDecoder(params))
 
     def forward(self, sample):
         """
@@ -19,6 +17,7 @@ class LineRecognition(Module):
         Return predicted gt for given img
         """
         return self.model(sample)
+
 
 class DepthSepConv2D(Module):
     def __init__(
@@ -207,7 +206,8 @@ class DSCBlock(Module):
         if pos == 3:
             x = self.dropout(x)
         return x
-    
+
+
 class LineDecoder(Module):
     def __init__(self, params):
         super().__init__()

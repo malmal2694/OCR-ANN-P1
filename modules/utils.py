@@ -13,12 +13,12 @@ class CodingString:
     (This is a transformer)
     """
 
-    def __init__(self, map_char_file:str, used_in_train=True):
+    def __init__(self, map_char_file: str, used_in_train=True):
         """
         Parameters
         ----------
         map_char_file (str): The path of the file that map chars to ints
-        used_in_train (bool): Set it true for the training and false for the testing 
+        used_in_train (bool): Set it true for the training and false for the testing
         and evaluation steps.
         """
         with open(map_char_file, "r") as f:
@@ -32,14 +32,14 @@ class CodingString:
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.char_to_int_map)  # + 1
 
-    def __call__(self, input:dict) -> Union[dict, np.ndarray]:
+    def __call__(self, input: dict) -> Union[dict, np.ndarray]:
         """
         Map the string to a numpy array of ints and then retrurn this array.
 
         Parameters
         ----------
-        input (dict): If ``used_in_train`` equals True, the ``input`` is a dict and we 
-        encode its ``gt`` key and return the whole input (with encoded ``gt``). 
+        input (dict): If ``used_in_train`` equals True, the ``input`` is a dict and we
+        encode its ``gt`` key and return the whole input (with encoded ``gt``).
         else ``input`` is a string and we encode it and return it in a numpy format.
         """
         txt_out = np.array([], dtype=int)
@@ -52,11 +52,13 @@ class CodingString:
             for char in input:
                 txt_out = np.append(txt_out, self.char_to_int_map[char])
             return txt_out
-    
+
+
 class DecodeString:
     """
     Decode the encoded string
     """
+
     def __init__(self, map_char_file):
         """
         map_char_file: The path of the file that map chars to ints
@@ -71,7 +73,7 @@ class DecodeString:
         # Refer to CTC loss algorithm.
         self.vocab_size = len(self.int_to_char_map)  # + 1
 
-    def __call__(self, encoded_gt:Union[Tensor, np.ndarray]) -> str:
+    def __call__(self, encoded_gt: Union[Tensor, np.ndarray]) -> str:
         """
         Map the encoded string to a decoded string and then return it.
 
@@ -81,21 +83,25 @@ class DecodeString:
         """
         txt_out = ""
         for coded_char in encoded_gt:
-            if coded_char != 0: # coded_char wasn't blank character(defined in CTC class)
+            if (
+                coded_char != 0
+            ):  # coded_char wasn't blank character(defined in CTC class)
                 # coded_char is tensor type, then we convert it to int
                 txt_out += self.int_to_char_map[int(coded_char)]
         return txt_out
-    
+
+
 def random_from_list(input_list):
     """
     Select one element from the input_list as random and return it.
     """
     return input_list[randint(0, len(input_list) - 1)]
 
-def load_char_map_file(path:str)->dict:
+
+def load_char_map_file(path: str) -> dict:
     """
     Load a map between characters and numbers.
-    
+
     Returns
     -------
     A dict maps chars to int.
@@ -107,6 +113,7 @@ def load_char_map_file(path:str)->dict:
     for line in file:
         char_to_int_map[line[0]] = int(line[2:5])
     return char_to_int_map
+
 
 def show_imgs(imgs, gts, details, permute=False):
     """
@@ -145,11 +152,12 @@ def show_imgs(imgs, gts, details, permute=False):
         else:
             raise ValueError("The imgs list is empty")
 
-def create_char_to_int_map_file(unique_chars:list, map_file_path:str, start_index=1):
+
+def create_char_to_int_map_file(unique_chars: list, map_file_path: str, start_index=1):
     """
     Create a ``map_file`` file(i.e., a file contains unique chars and their corresponding
     integer) and map ``unique_chars`` to integers with start index equals ``start_index``
-    
+
     Parameters
     ----------
     unique_chars (list): List of unique characters we want to map to integer.
@@ -161,29 +169,33 @@ def create_char_to_int_map_file(unique_chars:list, map_file_path:str, start_inde
             # Split the unique characters and assign to them an unique numberand save them
             f.write(f"{char[0]}#{format(index, '03d')}\n")
 
-def clean_sentence(input_sent:np.ndarray, sos_index:int, eos_index:int, ignore_token_index=0) -> np.ndarray:
+
+def clean_sentence(
+    input_sent: np.ndarray, sos_index: int, eos_index: int, ignore_token_index=0
+) -> np.ndarray:
     """
-    Remove <sos> token, <eos> token and characters after <eos>, and ignore tokens 
+    Remove <sos> token, <eos> token and characters after <eos>, and ignore tokens
     from sentence and return it.
-    
+
     Parameters
     ----------
     input_sent (np.ndarray): Input sentence that is a vector with the length of ``input_sent``.
     ``input_sent`` should be an encoded string.
     """
-    first_eos_indices = np.where(input_sent==eos_index)[0]
+    first_eos_indices = np.where(input_sent == eos_index)[0]
     if len(first_eos_indices) != 0:
         # Remove <eos> and characters after that
-        input_sent = input_sent[:first_eos_indices.min()]
+        input_sent = input_sent[: first_eos_indices.min()]
     input_sent = input_sent[np.where(input_sent != sos_index)[0]]
     # Remove the remaining ignore tokens
     input_sent = input_sent[np.where(input_sent != ignore_token_index)[0]]
     return input_sent
 
-def load_char_map_file(path:str)->dict:
+
+def load_char_map_file(path: str) -> dict:
     """
     Load a map between characters and numbers.
-    
+
     Returns
     -------
     A dict maps chars to int.
