@@ -11,10 +11,14 @@ from fast_ctc_decode import viterbi_search
 import numpy as np
 from .statistic import word_error_rate, char_error_rate
 from typing import Tuple
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 class TrainModel:
-    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int, test_step:int) -> None:
+    """
+    Train the model.
+    """
+    def __init__(self, model, dataset, params:dict, show_log_steps:int, save_check_step:int) -> None:
         """
         model: Name of model to train
         
@@ -38,8 +42,8 @@ class TrainModel:
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
         self.last_epoch_index = 0
-        self.lr = self.params["training"]["min_opt_lr"]
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        self.start_lr_val = self.params["training"]["lr"]["start_lr"]
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.start_lr_val)
         self.max_epoch = self.params["training"]["epoch_numbers"]
         self.checkpoint_dir = self.params["training"]["checkpoint_dir"]
         self.save_check_step = save_check_step
@@ -50,10 +54,10 @@ class TrainModel:
         # The statistics are CER and WER
         self.statistics = {}
         self.whitespace_index = params["dataset"]["whitespace_char_index"]
-        self.test_step = test_step
         self.testing_batch_count = params["training"]["testing_batch_count"]
-        
-    def fit(self, debug_mode=False):
+        self.lr_scheduler = ReduceLROnPlateau(self.optimizer, "min", factor=params["training"]["lr"]["factor"], patience=params["training"]["lr"]["patience"], verbose=True, threshold=params["training"]["lr"]["threshold"])
+
+    def fit(self):
         """
         Train the model
         
@@ -74,11 +78,6 @@ class TrainModel:
                 self.optimizer.zero_grad()
                 # forward + backward + optimize
                 output = self.model(imgs)
-                if debug_mode:
-                    print(f"Shape of the output of the model: {output.shape}")
-                    print(f"imgs.shape: {imgs.shape}")
-                    print(f"gts.shape: {gts.shape}")
-                
                 # loss = loss_fn(
                 #     output.permute(2, 0, 1),
                 #     gts,
@@ -94,15 +93,16 @@ class TrainModel:
                     print(f"Iteration {i} of epoch {epoch_index}) loss: {(running_loss / self.show_log_step):.5f}")
                     running_loss = 0
             
-            if epoch_index % self.test_step == 0:
-                result = self.test(self.testing_batch_count)
-                print(
-                    f"CER value: {result[0]:.5f}, WER value: {result[1]:.5f}, Epoch: {epoch_index}"
-                )
-                print(f"Ground truth sentence(target): {result[2][1]}")
-                print(f"OCRed (predicted) sentence: {result[2][0]}")
-                self.statistics[epoch_index] = {"cer": result[0], "wer": result[1]}
-               
+            # Test the accuracy of the model at the end of each epoch and step the lr value
+            result = self.test(self.testing_batch_count)
+            print(
+                f"CER value: {result[0]:.5f}, WER value: {result[1]:.5f}, Epoch: {epoch_index}"
+            )
+            print(f"Ground truth sentence(target): {result[2][1]}")
+            print(f"OCRed (predicted) sentence: {result[2][0]}")
+            self.statistics[epoch_index] = {"cer": result[0], "wer": result[1]}
+            self.lr_scheduler.step(result[0])   
+
             if epoch_index % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch_index)
                 print(f"Iteration {i} of epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}")
@@ -117,7 +117,8 @@ class TrainModel:
         file_name (str): Name of the file. (e.g., file-name.pt)
         """
         checkpoint = torch.load(path.join(self.checkpoint_dir, file_name), map_location=self.device)
-        self.last_epoch_index = checkpoint["last_epoch_index"] + 1
+        self.last_epoch_index = checkpoint["lr_scheduler"]["last_epoch"] + 1
+        self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
@@ -142,11 +143,11 @@ class TrainModel:
         if Path(file_path).is_file():
             raise FileExistsError(f"A file  with the same name and path exist.\nFile name: {file_path}")
         torch.save({
-            "last_epoch_index": index,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict(),
             "loss_state_dict": self.loss_fn.state_dict(),
             "statistics": self.statistics,
+            "lr_scheduler": self.lr_scheduler,
         }, file_path)
         return file_path
 

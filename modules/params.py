@@ -44,7 +44,7 @@ params = {
         # The number of images. Because we don't have a real dataset of image/gt
         # pairs also image/gt pairs create online, the value of this parameter
         # is desirable, but it's better for this value to be large.
-        "image_numbers": 3000,
+        "image_numbers": 5000,
         # The name of wordlist that is inside the root
         # directory and the words selected from this file. Note that in the wordlist,
         # each word should be placed in a separate line.
@@ -70,8 +70,20 @@ params = {
         ),
         # Note that acount space character too. There's no need to add blank character to these chars.
         "vocab_size": 91,
-        "min_opt_lr": 0.0004,  # Minimum learning rate we can reach
-        "max_opt_lr": 0.005, # Maximum learning rate we can reach
+        # Parameters of optimizer and lr scheduler
+        "lr":{
+            # The learning rate we start with this value
+            "start_lr": 0.005,
+            # Factor by which the learning rate will be reduced. new_lr = lr * factor.
+            "factor": 0.1,
+            # Number of epochs with no improvement after which learning rate will be reduced. 
+            # For example, if patience = 2, then we will ignore the first 2 epochs with no 
+            # improvement, and will only decrease the LR after the 3rd epoch if the loss 
+            # still hasn’t improved then.
+            "patience": 5,
+            # Threshold for measuring the new optimum, to only focus on significant changes. 
+            "threshold": 5e-3,
+        },
         "epoch_numbers": 2000, # Maximum number of epoches
         "checkpoint_dir": path.join( # Directory the checkpoint files store and read from
             path.abspath(path.dirname(__file__)),
@@ -81,10 +93,10 @@ params = {
         # current epoch will replace. The number of the # character shows the 
         # length of the number that will replace.
         "checkpoint_name": "checkpoint-####.pt",
-        "max_nb_epochs": 5000,  # max number of epochs for the training
-        "max_training_time": 3600 * (24 + 23),  # max training time limit (in seconds)
-        "load_epoch": "best",  # ["best", "last"], to load weights from best epoch or last trained epoch
-        "interval_save_weights": None,  # None: keep best and last only
+        # "max_nb_epochs": 5000,  # max number of epochs for the training
+        # "max_training_time": 3600 * (24 + 23),  # max training time limit (in seconds)
+        # "load_epoch": "best",  # ["best", "last"], to load weights from best epoch or last trained epoch
+        # "interval_save_weights": None,  # None: keep best and last only
         "use_ddp": False,  # Use DistributedDataParallel
         "use_apex": True,  # Enable mix-precision with apex package
         # Use GPU if available else CPU
@@ -92,24 +104,24 @@ params = {
         "batch_size": 16,  # mini-batch size per GPU
         # Number of batches to use in testing the model
         "testing_batch_count": 10,
-        "optimizer": {
-            # "class": Adam,
-            "args": {
-                "lr": 0.0001,
-                "amsgrad": False,
-            }
-        },
+        # "optimizer": {
+        #     # "class": Adam,
+        #     "args": {
+        #         "lr": 0.0001,
+        #         "amsgrad": False,
+        #     }
+        # },
         "eval_on_valid": True,  # Whether to eval and logs metrics on validation set during training or not
         "eval_on_valid_interval": 2,  # Interval (in epochs) to evaluate during training
         "focus_metric": "cer",  # Metrics to focus on to determine best epoch
         "expected_metric_value": "low",  # ["high", "low"] What is best for the focus metric value
         # "set_name_focus_metric": "{}-valid".format(dataset_name),
-        "train_metrics": ["loss_ctc", "cer", "wer"],  # Metrics name for training
-        "eval_metrics": [
-            "loss_ctc",
-            "cer",
-            "wer",
-        ],  # Metrics name for evaluation on validation set during training
-        "force_cpu": False,  # True for debug purposes to run on cpu only
+        # "train_metrics": ["loss_ctc", "cer", "wer"],  # Metrics name for training
+        # "eval_metrics": [
+        #     "loss_ctc",
+        #     "cer",
+        #     "wer",
+        # ],  # Metrics name for evaluation on validation set during training
+        # "force_cpu": False,  # True for debug purposes to run on cpu only
     },
 }

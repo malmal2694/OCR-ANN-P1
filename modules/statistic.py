@@ -12,7 +12,7 @@ def char_error_rate(model_sent:ndarray, valid_sent:ndarray)->float:
     
     Returns
     -------
-    Calculated CER.
+    Calculated CER; A value between ``0`` and ``1``. Smaller value means smaller error.
     """
     return nltk.edit_distance(model_sent, valid_sent)/float(len(valid_sent))
 
@@ -28,7 +28,7 @@ def word_error_rate(model_sent:ndarray, vslid_sent:ndarray, ws_index:int)->float
     
     Returns
     -------
-    Calculated WER.
+    Calculated WER; A value between ``0`` and ``1``. Smaller value means smaller error.
     """
     model_sent = [str(e) for e in model_sent]
     vslid_sent = [str(e) for e in vslid_sent]
