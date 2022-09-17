@@ -16,7 +16,7 @@ class OCRDataset(Dataset):
         params (dict): The dict contains all of the parameters
         """
         self.pair = CreateImgGtPair(params["artificial_dataset"])
-        self.transforms = params["training_params"]["transforms"]
+        self.transforms = params["training"]["transforms"]
         self.image_numbers = params["artificial_dataset"]["image_numbers"]
 
     def __len__(self):
