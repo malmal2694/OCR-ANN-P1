@@ -121,7 +121,7 @@ class TrainModel:
             if epoch_index % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch_index)
                 print(
-                    f"Iteration {i} of epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}"
+                    f"Epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}"
                 )
 
     def load_checkpoint(self, file_name: str) -> None:
