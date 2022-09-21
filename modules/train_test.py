@@ -83,7 +83,6 @@ class TrainModel:
         for epoch_index in range(self.last_epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
-                print(self.optimizer.param_groups[0]["lr"])
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
