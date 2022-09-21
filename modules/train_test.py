@@ -83,6 +83,7 @@ class TrainModel:
         for epoch_index in range(self.last_epoch_index, self.max_epoch):
             running_loss = 0.0
             for i, data in enumerate(self.dataloader):
+                print(self.optimizer.param_groups[0]["lr"])
                 # Send image and gt batch to the device that is specified.
                 imgs = data["img"].to(self.device)
                 gts = data["gt"].to(self.device)
@@ -142,7 +143,7 @@ class TrainModel:
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
         self.statistics = checkpoint["statistics"]
 
-        # the patience parameter of the scheduler can only change via "params" file
+        # the patience parameter of the scheduler can only change via "params" file not via loaded state_dict
         patience = self.lr_scheduler.state_dict()["patience"]
         checkpoint["lr_scheduler"]["patience"] = patience
         self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
