@@ -197,7 +197,7 @@ class TrainModel:
         cer = 0
         sent_numbers = 0
         # First index contains OCRed sentence(sentence predicted by the model),
-        # second index is target ground truth.
+        # second index is target ground truth. They store as decoded strings.
         sample = list()
         for i in range(batch_count):
             batch = next(iter(self.dataloader))
@@ -230,7 +230,7 @@ class TrainModel:
                 wer += word_error_rate(out_sent, valid_sent, self.whitespace_index)
         cer = cer / sent_numbers
         wer = wer / sent_numbers
-        sample = [self.decode_string(sent) for sent in sample]
+        # sample = [self.decode_string(sent) for sent in sample]
         return (cer, wer, sample)
 
     def get_statistics(self) -> dict:
