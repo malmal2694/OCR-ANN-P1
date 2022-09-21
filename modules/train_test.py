@@ -206,14 +206,15 @@ class TrainModel:
                     viterbi_search(
                         output[0].permute(1, 0).cpu().numpy().astype(np.float32),
                         self.alphabet,
-                    )
+                    )[0]
                 )
                 print(sample)
                 print(output.shape)
                 sample.append(self.decode_gt(batch["gt"][0]))
                 sent_numbers = len(batch) * batch_count
 
-            for out_sent, valid_sent in zip(output, batch["valid"].cpu().numpy()):
+            for out_sent, valid_sent in zip(output, batch["gt"].cpu().numpy()):
+                print(out_sent.shape)
                 out_sent = clean_sentence(out_sent, 200, 201, 0)
                 valid_sent = clean_sentence(valid_sent, 200, 201, 0)
                 cer += char_error_rate(out_sent, valid_sent)
