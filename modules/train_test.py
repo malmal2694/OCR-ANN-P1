@@ -137,11 +137,15 @@ class TrainModel:
             path.join(self.checkpoint_dir, file_name), map_location=self.device
         )
         self.last_epoch_index = checkpoint["lr_scheduler"]["last_epoch"] + 1
-        self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
         self.statistics = checkpoint["statistics"]
+
+        # the patience parameter of the scheduler can only change via "params" file
+        patience = self.lr_scheduler.state_dict()["patience"]
+        checkpoint["lr_scheduler"]["patience"] = patience
+        self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
     def save_checkpoint(self, index: int) -> str:
         """
