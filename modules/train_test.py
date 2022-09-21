@@ -63,6 +63,7 @@ class TrainModel:
         self.statistics = {}
         self.whitespace_index = params["dataset"]["whitespace_char_index"]
         self.testing_batch_count = params["training"]["testing_batch_count"]
+        self.encode = CodingString(self.map_char_file, used_in_train=False)
         self.lr_scheduler = ReduceLROnPlateau(
             self.optimizer,
             "min",
@@ -215,10 +216,13 @@ class TrainModel:
 
             for out_sent, valid_sent in zip(output, batch["gt"].cpu().numpy()):
                 print(out_sent.shape)
+                # Store created sentence by the model and then encode it to integers
                 out_sent = viterbi_search(
                         out_sent.permute(1, 0).cpu().numpy().astype(np.float32), 
                         self.alphabet
                 )[0]
+                out_sent = self.encode(out_sent)
+                print("end out_sent:", out_sent)
                 out_sent = clean_sentence(out_sent, 200, 201, 0)
                 valid_sent = clean_sentence(valid_sent, 200, 201, 0)
                 cer += char_error_rate(out_sent, valid_sent)
