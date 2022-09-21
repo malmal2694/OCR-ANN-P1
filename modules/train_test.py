@@ -52,6 +52,11 @@ class TrainModel:
         self.save_check_step = save_check_step
         self.map_char_file = params["dataset"]["unique_chars_map_file"]
         self.alphabet = "".join(load_char_map_file(self.map_char_file).keys())
+        # Add a character is not used in the alphabet to represent the blank
+        # character. (we suppose the index of blank characters is zero) We use an
+        # emoji. There's no need to delete this character; it will automatically remove.
+        # Also we suppose the index of blank character is zero
+        alphabet = "🐱" + alphabet
         self.decode_gt = DecodeString(self.map_char_file)
         # Store statistics during the training.
         # The statistics are CER and WER
@@ -69,11 +74,7 @@ class TrainModel:
 
     def fit(self):
         """
-        Train the model
-
-        Parameters
-        ----------
-        debug_mode: If true, show more information in training
+        Train the model.
         """
         torch.autograd.set_detect_anomaly(True)
 
@@ -207,6 +208,8 @@ class TrainModel:
                         self.alphabet,
                     )
                 )
+                print(sample)
+                print(output.shape)
                 sample.append(self.decode_gt(batch["gt"][0]))
                 sent_numbers = len(batch) * batch_count
 
