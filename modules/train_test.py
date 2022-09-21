@@ -64,6 +64,7 @@ class TrainModel:
         self.whitespace_index = params["dataset"]["whitespace_char_index"]
         self.testing_batch_count = params["training"]["testing_batch_count"]
         self.encode = CodingString(self.map_char_file, used_in_train=False)
+        self.decode_string = DecodeString(self.map_char_file)
         self.lr_scheduler = ReduceLROnPlateau(
             self.optimizer,
             "min",
