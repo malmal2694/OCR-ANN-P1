@@ -171,7 +171,7 @@ class TrainModel:
                 "optimizer_state_dict": self.optimizer.state_dict(),
                 "loss_state_dict": self.loss_fn.state_dict(),
                 "statistics": self.statistics,
-                "lr_scheduler": self.lr_scheduler,
+                "lr_scheduler": self.lr_scheduler.state_dict(),
             },
             file_path,
         )
