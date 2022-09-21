@@ -124,7 +124,7 @@ class TrainModel:
                     f"Epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}"
                 )
 
-    def load_checkpoint(self, file_name: str) -> None:
+    def load_checkpoint(self, file_name: str, lr_val:float=None) -> None:
         """
         Load the checkpoint.
         Checkpoints contain, parameters of the model, optimizer, loss value, and index of the last epoch.
@@ -146,7 +146,10 @@ class TrainModel:
         patience = self.lr_scheduler.state_dict()["patience"]
         checkpoint["lr_scheduler"]["patience"] = patience
         self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
-
+        # Set lr to value user specified
+        if lr_val != None:
+            self.optimizer.param_groups[0]["lr"] = lr_val
+            
     def save_checkpoint(self, index: int) -> str:
         """
         Parameters
