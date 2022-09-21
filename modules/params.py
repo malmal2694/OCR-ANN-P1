@@ -41,7 +41,7 @@ params = {
         # The number of images. Because we don't have a real dataset of image/gt
         # pairs also image/gt pairs create online, the value of this parameter
         # is desirable, but it's better for this value to be large.
-        "image_numbers": 5000,
+        "image_numbers": 4000,
         # The name of wordlist that is inside the root
         # directory and the words selected from this file. Note that in the wordlist,
         # each word should be placed in a separate line.
@@ -76,7 +76,7 @@ params = {
             # For example, if patience = 2, then we will ignore the first 2 epochs with no
             # improvement, and will only decrease the LR after the 3rd epoch if the loss
             # still hasn’t improved then.
-            "patience": 5,
+            "patience": 10,
             # Threshold for measuring the new optimum, to only focus on significant changes.
             "threshold": 5e-3,
         },
