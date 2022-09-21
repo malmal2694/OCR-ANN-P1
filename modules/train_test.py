@@ -56,7 +56,7 @@ class TrainModel:
         # character. (we suppose the index of blank characters is zero) We use an
         # emoji. There's no need to delete this character; it will automatically remove.
         # Also we suppose the index of blank character is zero
-        alphabet = "🐱" + alphabet
+        self.alphabet = "🐱" + self.alphabet
         self.decode_gt = DecodeString(self.map_char_file)
         # Store statistics during the training.
         # The statistics are CER and WER
