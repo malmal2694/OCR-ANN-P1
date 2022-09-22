@@ -44,7 +44,7 @@ class TrainModel:
         self.show_log_step = show_log_steps
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
-        self.last_epoch_index = 28
+        self.last_epoch_index = 0
         self.lr_val = self.params["training"]["lr_val"]
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr_val)
         self.max_epoch = self.params["training"]["epoch_numbers"]
@@ -127,7 +127,7 @@ class TrainModel:
         checkpoint = torch.load(
             path.join(self.checkpoint_dir, file_name), map_location=self.device
         )
-        # self.last_epoch_index = checkpoint["last_epoch_index"] + 1
+        self.last_epoch_index = checkpoint["last_epoch_index"] + 1
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
