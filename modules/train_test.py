@@ -44,9 +44,9 @@ class TrainModel:
         self.show_log_step = show_log_steps
         self.loss_fn = CTCLoss(blank=0)
         # The last epoch executed in the last run
-        self.last_epoch_index = 0
-        self.start_lr_val = self.params["training"]["lr"]["start_lr"]
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.start_lr_val)
+        self.last_epoch_index = 28
+        self.lr_val = self.params["training"]["lr_val"]
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr_val)
         self.max_epoch = self.params["training"]["epoch_numbers"]
         self.checkpoint_dir = self.params["training"]["checkpoint_dir"]
         self.save_check_step = save_check_step
@@ -65,14 +65,6 @@ class TrainModel:
         self.testing_batch_count = params["training"]["testing_batch_count"]
         self.encode = CodingString(self.map_char_file, used_in_train=False)
         self.decode_string = DecodeString(self.map_char_file)
-        self.lr_scheduler = ReduceLROnPlateau(
-            self.optimizer,
-            "min",
-            factor=params["training"]["lr"]["factor"],
-            patience=params["training"]["lr"]["patience"],
-            verbose=True,
-            threshold=params["training"]["lr"]["threshold"],
-        )
 
     def fit(self):
         """
@@ -108,7 +100,7 @@ class TrainModel:
                     )
                     running_loss = 0
 
-            # Test the accuracy of the model at the end of each epoch and step the lr value
+            # Test the accuracy of the model at the end of each epoch
             result = self.test(self.testing_batch_count)
             print(
                 f"CER value: {result[0]:.5f}, WER value: {result[1]:.5f}, Epoch: {epoch_index}"
@@ -116,7 +108,6 @@ class TrainModel:
             print(f"Ground truth sentence(target): {result[2][1]}")
             print(f"OCRed (predicted) sentence: {result[2][0]}")
             self.statistics[epoch_index] = {"cer": result[0], "wer": result[1]}
-            self.lr_scheduler.step(result[0])
 
             if epoch_index % self.save_check_step == 0:
                 out = self.save_checkpoint(epoch_index)
@@ -124,7 +115,7 @@ class TrainModel:
                     f"Epoch {epoch_index}) Checkpoint saved. checkpoint path: {out}"
                 )
 
-    def load_checkpoint(self, file_name: str, lr_val:float=None) -> None:
+    def load_checkpoint(self, file_name: str) -> None:
         """
         Load the checkpoint.
         Checkpoints contain, parameters of the model, optimizer, loss value, and index of the last epoch.
@@ -136,19 +127,11 @@ class TrainModel:
         checkpoint = torch.load(
             path.join(self.checkpoint_dir, file_name), map_location=self.device
         )
-        self.last_epoch_index = checkpoint["lr_scheduler"]["last_epoch"] + 1
+        # self.last_epoch_index = checkpoint["last_epoch_index"] + 1
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         self.loss_fn.load_state_dict(checkpoint["loss_state_dict"])
         self.statistics = checkpoint["statistics"]
-
-        # the patience parameter of the scheduler can only change via "params" file not via loaded state_dict
-        patience = self.lr_scheduler.state_dict()["patience"]
-        checkpoint["lr_scheduler"]["patience"] = patience
-        self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
-        # Set lr to value user specified
-        if lr_val != None:
-            self.optimizer.param_groups[0]["lr"] = lr_val
 
     def save_checkpoint(self, index: int) -> str:
         """
@@ -178,7 +161,7 @@ class TrainModel:
                 "optimizer_state_dict": self.optimizer.state_dict(),
                 "loss_state_dict": self.loss_fn.state_dict(),
                 "statistics": self.statistics,
-                "lr_scheduler": self.lr_scheduler.state_dict(),
+                "last_epoch_index": self.last_epoch_index,
             },
             file_path,
         )

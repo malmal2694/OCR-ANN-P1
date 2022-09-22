@@ -66,20 +66,8 @@ params = {
         ),
         # Note that acount space character too. There's no need to add blank character to these chars.
         "vocab_size": 91,
-        # Parameters of optimizer and lr scheduler
-        "lr": {
-            # The learning rate we start with this value
-            "start_lr": 0.005,
-            # Factor by which the learning rate will be reduced. new_lr = lr * factor.
-            "factor": 0.1,
-            # Number of epochs with no improvement after which learning rate will be reduced.
-            # For example, if patience = 2, then we will ignore the first 2 epochs with no
-            # improvement, and will only decrease the LR after the 3rd epoch if the loss
-            # still hasn’t improved then.
-            "patience": 10,
-            # Threshold for measuring the new optimum, to only focus on significant changes.
-            "threshold": 5e-3,
-        },
+        # The learning rate we start from
+        "lr_val": 1e-4,
         "epoch_numbers": 2000,  # Maximum number of epoches
         "checkpoint_dir": path.join(  # Directory the checkpoint files store and read from
             path.abspath(path.dirname(__file__)), "../create-data/checkpoints"
