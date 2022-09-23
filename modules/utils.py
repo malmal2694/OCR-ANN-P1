@@ -211,6 +211,8 @@ def load_char_map_file(path: str) -> dict:
 def split_data(info_path:str, train_ratio=65, validation_ratio=25):
     """
     Split image/gt pairs into three traning, test, and validation set.
+    Note that after specifiying training data and validation data, remaining data 
+    will be used as test data.
 
     Parameters
     ----------
@@ -227,7 +229,6 @@ def split_data(info_path:str, train_ratio=65, validation_ratio=25):
         for row in csv_f:
             if head == True:
                 head = False
-                print(row)
                 if row[-1].strip() == "used_in":
                     raise csv.Error("Ground Truths are splited previously. Becuase the last element in the first row is 'used_in' label")
                 else:
