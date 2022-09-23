@@ -1,11 +1,11 @@
-from random import randint
+from random import randint, random
 from bidi.algorithm import get_display
 import arabic_reshaper
 import matplotlib.pyplot as plt
 from torch import Tensor
 from typing import Union
 import numpy as np
-
+import csv
 
 class CodingString:
     """
@@ -207,3 +207,41 @@ def load_char_map_file(path: str) -> dict:
     for line in file:
         char_to_int_map[line[0]] = int(line[2:5])
     return char_to_int_map
+
+def split_data(info_path:str, train_ratio=65, validation_ratio=25):
+    """
+    Split image/gt pairs into three traning, test, and validation set.
+
+    Parameters
+    ----------
+    info_path (str): Path of the ``INFO.csv`` file all Ground truths stored there.
+    out_path (str): The path the text files export there.
+    train_ratio (int): Ratio of files to be considered as the training set. e.g., 
+    ratio=75 means that 75% of files be in the training set.
+    validation_ratio (int): Ratio of files to be considered as the validation set.
+    """
+    data = []
+    with open(info_path, "r") as f:
+        csv_f = csv.reader(f, delimiter=",")
+        head = True
+        for row in csv_f:
+            if head == True:
+                head = False
+                print(row)
+                if row[-1].strip() == "used_in":
+                    raise csv.Error("Ground Truths are splited previously. Becuase the last element in the first row is 'used_in' label")
+                else:
+                    row.append("used_in")
+            else:
+                r = random()
+                if r < train_ratio/100:
+                    row.append("train")
+                elif (train_ratio/100) <= r and  r < (train_ratio+validation_ratio)/100:
+                    row.append("validation")
+                else:
+                    row.append("test")
+            data.append(row)
+    
+    with open(info_path, "w") as f:
+        csvwriter = csv.writer(f, delimiter=",")
+        csvwriter.writerows(data)
