@@ -43,7 +43,7 @@ class OCRDataset(Dataset):
                 imgs = path.join(params["dataset"]["dataset_dir"], i, "*")
                 imgs = glob(imgs)
                 for img in imgs:
-                    self.imgs_path[img] = i
+                    self.imgs_path[path.split(img)] = i
                 
             elif path.split(i)[1] == "INFO.csv":
                 with open(i, "r") as f:
@@ -74,7 +74,6 @@ class OCRDataset(Dataset):
         img_path = img_path.replace(
             hash_count * "#", format(data_id, f"0{hash_count}d")
         )
-        print(self.imgs_path)
         img_path = path.join(self.dataset_dir, self.imgs_path[img_path], img_path)
         image = Image.open(img_path, "r")
         gt = self.gts[str(data_id)]
