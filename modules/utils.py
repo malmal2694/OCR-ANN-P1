@@ -115,11 +115,11 @@ def load_char_map_file(path: str) -> dict:
     return char_to_int_map
 
 
-def show_imgs(imgs, gts, details, permute=False):
+def show_imgs(imgs, gts, details=None, permute=False):
     """
     Show image batches from a tensor. Note that the first dimension of each image is
-    height, the second is width, and the third is the number of the image's channel.
-    (Note that type of the image shouldn't be Numpy.float16. If use that, raise an error)
+    height, the second is width, and the third is the number of the image is channel.
+    (Note that type of the image shouldn't be Numpy.float16. If use that, raises an error)
     Parameters
     ----------
     imgs(list): A list of images; the type of each image should be float Numpy or
@@ -135,7 +135,8 @@ def show_imgs(imgs, gts, details, permute=False):
         # Convert gt text to a printable style
         gt = arabic_reshaper.reshape(gts[i])
         gt = get_display(gt)
-        gt += "\n" + details[i]
+        if details != None:
+            gt += "\n" + details[i]
         if type(img) == Tensor and permute:
             img = img.permute(2, 1, 0)
         elif type(img) != Tensor and permute:

@@ -25,25 +25,25 @@ class OCRDataset(Dataset):
         used_in (str): In can be one of the three ``train``, ``test``, and ``validation`` 
         strings and means where the dataset is used.
         """
+        image_name_format = params["dataset"]["image_name_format"]
+        dataset_dir = params["dataset"]["dataset_dir"]
         self.transforms = params["training"]["transforms"]
         self.used_in = used_in
-        self.image_name_format = params["dataset"]["image_name_format"]
         # List of all directories in the dataset directory.
-        self.dataset_dir = params["dataset"]["dataset_dir"]
         dirs = path.join(self.dataset_dir, "*")
         dirs = glob(dirs)
         # Store path of all image in all of the directories in the dataset_dir.
         # Keys are the name of images and values are name of directory the image is in.
-        self.imgs_path = dict()
+        imgs_path = dict()
         # The file some information of images (e.g., ground truth of images) stored there.
         # Key is the index(str type) of image and value is the gt
-        self.gts = {}
+        gts = {}
         for i in dirs:
             if path.isdir(i):
                 imgs = path.join(params["dataset"]["dataset_dir"], i, "*")
                 imgs = glob(imgs)
                 for img in imgs:
-                    self.imgs_path[path.split(img)[1]] = i
+                    imgs_path[path.split(img)[1]] = i
                 
             elif path.split(i)[1] == "INFO.csv":
                 with open(i, "r") as f:
@@ -53,11 +53,20 @@ class OCRDataset(Dataset):
                         if head == False and row[-1] == self.used_in:
                             gt = row[6]
                             if row[6][-1] == "\n": gt = gt[:-1]
-                            self.gts[row[0]] = gt
+                            gts[row[0]] = gt
                         else:
                             head = False
-        self.pair_count = len(self.gts)
-            
+        self.pairs = []
+        for gt_index, gt in zip(gts.keys(), gts.values()):
+            img_path = image_name_format
+            hash_count = img_path.count("#")
+            img_path = img_path.replace(
+                hash_count * "#", format(int(gt_index), f"0{hash_count}d")
+            )
+            img_path = path.join(dataset_dir, imgs_path[img_path], img_path)
+            self.pairs.append({"img": img_path, "gt": gt})
+        self.pair_count = len(self.pairs)
+        
     def __len__(self):
         """
         Return number of data points
@@ -70,20 +79,12 @@ class OCRDataset(Dataset):
         as a dictionary with two key: img and gt(ground truth).
         type of image is ``np.ndarray``.
         """
-        img_path = self.image_name_format
-        hash_count = img_path.count("#")
-        img_path = img_path.replace(
-            hash_count * "#", format(data_id, f"0{hash_count}d")
-        )
-        img_path = path.join(self.dataset_dir, self.imgs_path[img_path], img_path)
-        image = np.asarray(Image.open(img_path, "r"))
-        
-        gt = self.gts[str(data_id)]
-        pair = {"img": image, "gt": gt}
+        data = self.pairs[data_id]
+        data["img"] = np.asarray(Image.open(data["img"], "r"))
         if self.transforms:
-            pair = self.transforms(pair)
+            data = self.transforms(data)
 
-        return pair
+        return data
 
 class Normalize:
     """
