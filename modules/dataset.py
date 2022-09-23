@@ -74,7 +74,7 @@ class OCRDataset(Dataset):
         img_path = img_path.replace(
             hash_count * "#", format(data_id, f"0{hash_count}d")
         )
-        img_path = path.join(self.dataset_dir, self.imgs_path[data_id], img_path)
+        img_path = path.join(self.dataset_dir, self.imgs_path[str(data_id)], img_path)
         image = Image.open(img_path, "r")
         gt = self.gts[str(data_id)]
         pair = {"img": image, "gt": gt}
