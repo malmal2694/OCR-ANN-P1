@@ -68,6 +68,7 @@ class OCRDataset(Dataset):
         """
         Return the img/gt (image/ground truth) pair with the given id
         as a dictionary with two key: img and gt(ground truth).
+        type of image is ``np.ndarray``.
         """
         img_path = self.image_name_format
         hash_count = img_path.count("#")
@@ -75,7 +76,8 @@ class OCRDataset(Dataset):
             hash_count * "#", format(data_id, f"0{hash_count}d")
         )
         img_path = path.join(self.dataset_dir, self.imgs_path[img_path], img_path)
-        image = Image.open(img_path, "r")
+        image = np.asarray(Image.open(img_path, "r"))
+        
         gt = self.gts[str(data_id)]
         pair = {"img": image, "gt": gt}
         if self.transforms:
