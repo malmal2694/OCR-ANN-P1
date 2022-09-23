@@ -30,7 +30,7 @@ class OCRDataset(Dataset):
         self.transforms = params["training"]["transforms"]
         self.used_in = used_in
         # List of all directories in the dataset directory.
-        dirs = path.join(self.dataset_dir, "*")
+        dirs = path.join(dataset_dir, "*")
         dirs = glob(dirs)
         # Store path of all image in all of the directories in the dataset_dir.
         # Keys are the name of images and values are name of directory the image is in.
