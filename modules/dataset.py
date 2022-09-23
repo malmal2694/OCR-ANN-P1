@@ -1,42 +1,87 @@
+from genericpath import isdir
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms.functional import resize
 import numpy as np
 from .create_pairs import CreateImgGtPair
 from typing import Union
+from glob import glob
+from os import path
+import csv
+from PIL import Image
 
 
 class OCRDataset(Dataset):
     """
-    Manage creating, transforming, and returning image
+    Manage retrieving, transforming, and returning image/gt pairs.
+    Pairs stored in the disk and load only pair we want to the memory.
     """
 
-    def __init__(self, params):
+    def __init__(self, params, used_in:str):
         """
+        Parameters
+        ----------
         params (dict): The dict contains all of the parameters
+        used_in (str): In can be one of the three ``train``, ``test``, and ``validation`` 
+        strings and means where the dataset is used.
         """
-        self.pair = CreateImgGtPair(params["artificial_dataset"])
         self.transforms = params["training"]["transforms"]
-        self.image_numbers = params["artificial_dataset"]["image_numbers"]
-
+        self.used_in = used_in
+        self.image_name_format = params["dataset"]["image_name_format"]
+        # List of all directories in the dataset directory.
+        self.dataset_dir = params["dataset"]["dataset_dir"]
+        dirs = path.join(self.dataset_dir, "*")
+        dirs = glob(dirs)
+        # Store path of all image in all of the directories in the dataset_dir.
+        # Keys are the name of images and values are name of directory the image is in.
+        self.imgs_path = dict()
+        # The file some information of images (e.g., ground truth of images) stored there.
+        # Key is the index(str type) of image and value is the gt
+        self.gts = {}
+        for i in dirs:
+            if path.isdir(i):
+                imgs = path.join(params["dataset"]["dataset_dir"], i, "*")
+                contents = glob(imgs)
+                for img in contents:
+                    self.imgs_path[img] = i
+                
+            elif path.split(i)[1] == "INFO.csv":
+                with open(i, "r") as f:
+                    csv_f = csv.reader(f, delimiter=",")
+                    head = True
+                    for row in csv_f:
+                        if head == False and row[-1] == self.used_in:
+                            gt = row[6]
+                            if row[6][-1] == "\n": gt = gt[:-1]
+                            self.gts[row[0]] = gt
+                        else:
+                            head = False
+        self.pair_count = len(self.gts)
+            
     def __len__(self):
         """
         Return number of data points
         """
-        return self.image_numbers
+        return self.pair_count
 
     def __getitem__(self, data_id):
         """
         Return the img/gt (image/ground truth) pair with the given id
         as a dictionary with two key: img and gt(ground truth).
         """
-        image, gt, _ = self.pair.create_pair()
+        img_path = self.image_name_format
+        hash_count = img_path.count("#")
+        img_path = img_path.replace(
+            hash_count * "#", format(data_id, f"0{hash_count}d")
+        )
+        img_path = path.join(self.dataset_dir, self.imgs_path[img_path], img_path)
+        image = Image.open(img_path, "r")
+        gt = self.gts[str(data_id)]
         pair = {"img": image, "gt": gt}
         if self.transforms:
             pair = self.transforms(pair)
 
         return pair
-
 
 class Normalize:
     """

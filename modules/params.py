@@ -19,6 +19,15 @@ params = {
         ),
         # Index of the whitespace(The character that is between words of sentence).
         "whitespace_char_index": 1,
+        # Path of dataset we want to train, test, and evaluate of the model
+        # The structure of the dataset directory should be as follows:
+        # All images should be in some (one or more) directory and all texts(gts) 
+        # should be in a file named "INFO.csv" and be in the "dataset_dir" directory.
+        "dataset_dir": path.join(
+            path.abspath(path.dirname(__file__)), "../create-data/unique_chars_map.txt"
+        ),
+        # The format of the name is common between all images
+        "image_name_format": "#####.tif",
     },
     "artificial_dataset": {
         "fontlist": glob.glob(
