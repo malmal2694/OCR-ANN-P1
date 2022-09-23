@@ -79,7 +79,7 @@ class OCRDataset(Dataset):
         as a dictionary with two key: img and gt(ground truth).
         type of image is ``np.ndarray``.
         """
-        data = self.pairs[data_id]
+        data = self.pairs[data_id].copy()
         data["img"] = np.asarray(Image.open(data["img"], "r"))
         if self.transforms:
             data = self.transforms(data)
