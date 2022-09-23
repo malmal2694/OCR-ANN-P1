@@ -43,7 +43,7 @@ class OCRDataset(Dataset):
                 imgs = path.join(params["dataset"]["dataset_dir"], i, "*")
                 imgs = glob(imgs)
                 for img in imgs:
-                    self.imgs_path[path.split(img)] = i
+                    self.imgs_path[path.split(img)[1]] = i
                 
             elif path.split(i)[1] == "INFO.csv":
                 with open(i, "r") as f:
