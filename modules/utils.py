@@ -6,6 +6,10 @@ from torch import Tensor
 from typing import Union
 import numpy as np
 import csv
+import logging
+import re
+from sys import maxsize
+
 
 class CodingString:
     """
@@ -90,7 +94,6 @@ class DecodeString:
                 txt_out += self.int_to_char_map[int(coded_char)]
         return txt_out
 
-
 def random_from_list(input_list):
     """
     Select one element from the input_list as random and return it.
@@ -102,6 +105,10 @@ def load_char_map_file(path: str) -> dict:
     """
     Load a map between characters and numbers.
 
+    Parameters
+    ----------
+    path (str): The path of the file contains mapping between ints and chars.
+    
     Returns
     -------
     A dict maps chars to int.
@@ -247,3 +254,93 @@ def split_data(info_path:str, train_ratio=65, validation_ratio=25):
     with open(info_path, "w") as f:
         csvwriter = csv.writer(f, delimiter=",")
         csvwriter.writerows(data)
+        
+
+def extract_uniq_chars(file:str, uniq_char_file:str, ret_adtnl_chars:bool=False) -> set:
+    """
+    Extract unique chars that are in the files of the directory.
+
+    Parameters
+    ----------
+    file (str): The path of the file we want extract its uniq characters.
+    uniq_char_file (str): The file contains all of the desired unique characters.
+    ret_adtnl_chars (bool): If true return just characters that are not listed 
+    in the ``uniq_char_file`` file; If false return all of the extracted unique characters.
+
+    Returns
+    -------
+    Extracted uniq chars as a set.
+    """
+    uniq_chars = set()
+    desired_uniq_chars = load_char_map_file(uniq_char_file).keys()
+    with open(file, "r") as f:
+        book = f.read()
+        uniq_chars = uniq_chars.union(set(book))
+    if ret_adtnl_chars:
+        # Additional characters
+        adtnl_chars = set()
+        for char in uniq_chars:
+            if char not in desired_uniq_chars:
+                adtnl_chars = adtnl_chars.union(char)
+        uniq_chars = adtnl_chars
+
+    return uniq_chars
+
+def clean_str(text:str, hard_clean=False, uniq_chars_map_file="") -> str:
+        """
+        Clean all files in the dicrectory with rules definded and return.
+
+        Parameters
+        ----------
+        text (str): The text we want clean it.
+        hard_clean (bool): If true, after running the cleaning rules, remove all
+        characters except the characters in the ``uniq_chars_map_file`` file.
+        uniq_chars_map_file (str): If ``hard_clean`` equals true, set this
+        parameter as the path of ``uniq_chars_map_file``.
+        """
+        # Remove the lines start with bracket([])(e.g., refrences)
+        text = re.sub(r"^\[.*].*$", r"", text, maxsize, re.MULTILINE)
+        # Remove remaining brackets([]) and their contents
+        text = re.sub(r"\[.*\]", r"", text, maxsize, re.MULTILINE)
+        text = re.sub(r"[a-zA-Z]+", r"", text, maxsize) # Remove English characters
+        # Replace English and Arabic numbers with Farsi numbers
+        for en_char, ar_char, fa_char in zip([str(i) for i in range(10)], ['٩', '٨', '٧', '٦', '٥', '٤', '٣', '٢', '١', '٠'], ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]):
+            text = re.sub(f"[{en_char}{ar_char}]", fa_char, text, maxsize)
+        text = re.sub(",", "،", text, maxsize, re.MULTILINE) # Replace English comma with Arabic comma
+        text = re.sub("\?", "؟", text, maxsize, re.MULTILINE) # Replace English question mark to Arabic question mark
+        text = re.sub(r"[ÙïřŠƘƙǘǙǠʙȘș¾ΘΙΠ٭%×Ϙ'~÷ϙϠЙРљµҘә@•\uf031\u202e\u202b\u2005\u00a0]", "", text, maxsize) # Remove unnecessary characters
+        text = re.sub("[–_]", "-", text, maxsize) # Replace some character with HYPHEN-MINUS(-)
+        text = re.sub("·", ".", text, maxsize) # Replace middle dot with dot
+        text = re.sub(";", "؛", text, maxsize) # Replace English semicolon with Arabic semicolon
+        text = re.sub("[“”]", '"', text, maxsize) # Replace two characers with quotation mark
+        text = re.sub("…", "...", text, maxsize)
+        text = re.sub("››", "«", text, maxsize) # Replace a character
+        text = re.sub("‹‹", "»", text, maxsize) # Replace a character
+        text = re.sub("[‹›]", "", text, maxsize) # Remvoe some characters
+        text = re.sub(r"\s*ص\s*:\s*[۰-۹]+ *", "", text, maxsize) # Remove number of pages (e.g., ص: ۲۳)
+        text = re.sub("ى", "ی", text, maxsize, re.MULTILINE) # Replace character code 0x649 with 0x6cc
+        text = re.sub("ي", "ی", text, maxsize, re.MULTILINE) # Replace character code 0x64a with 0x6cc
+        text = re.sub("ك", "ک", text, maxsize) # Replace ARABIC LETTER KAF with ARABIC LETTER KEHEH
+        text = re.sub("۟", "ْ", text, maxsize) # Replace some characters wit Arabic Sukun
+        text = re.sub("\t", " ", text, maxsize) # Replace tab character with space character
+        arabic_chars = "ۣۢۨٙ"
+        arabic_chars += "۪۠ۧ"
+        arabic_chars += "ؙۭ۫۬ۜ"
+        text = re.sub(f"[{arabic_chars}]", "", text, maxsize) # Remove some Arabic characters
+        if hard_clean:
+            uniq_chars = load_char_map_file(uniq_chars_map_file).keys()
+            uniq_chars = "".join(uniq_chars)
+            # If there was bracket characters in the uniq_chars convert it
+            # to an appropriate format to use in Regexp.
+            uniq_chars = uniq_chars.replace("[", "\[")
+            uniq_chars = uniq_chars.replace("]", "\]")
+            # Remove all characters except the characters in the uniq_chars_map_file + \n character
+            text = re.sub(f"[^{uniq_chars}\n]+", "", text, maxsize)
+        text = re.sub("^\s+", "", text, maxsize, re.MULTILINE) # Remove empty lines
+
+        # If there exist an end line character at the end of file, remove it
+        if text[-1] == "\n":
+            text = text[:-1]
+
+        return text
+            
